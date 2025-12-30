@@ -1,0 +1,11 @@
+# Python
+*.pyc
+__pycache__/
+*.log
+db.sqlite3
+/media
+/staticfiles
+venv/
+.vscode/
+.DS_Store
+.claude/
