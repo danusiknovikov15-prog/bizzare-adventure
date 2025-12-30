@@ -31,12 +31,20 @@ export class LevelManager {
         // Track initial enemy count for level completion
         this.initialEnemyCount = 0;
 
+        // Tutorial system
+        this.tutorialHintsShown = new Set(); // Отслеживание показанных подсказок
+        this.activeTutorialHint = null;      // Текущая активная подсказка
+
         console.log('LevelManager initialized with new systems');
     }
 
     // Load a level from level data
     loadLevel(levelData) {
         console.log(`Loading level: ${levelData.name}`);
+
+        // Сбросить туториальные подсказки при загрузке нового уровня
+        this.tutorialHintsShown.clear();
+        this.activeTutorialHint = null;
 
         this.levelData = levelData;
         this.currentLevel = levelData.name;
@@ -178,9 +186,92 @@ export class LevelManager {
                player.y <= goal.y + goal.height;
     }
 
+    // Update tutorial system
+    updateTutorial(player) {
+        // Пропустить если не туториальный уровень
+        if (!this.levelData || !this.levelData.isTutorial || !this.levelData.tutorialHints) {
+            return;
+        }
+
+        this.activeTutorialHint = null;
+
+        // Проверить каждую подсказку
+        for (const hint of this.levelData.tutorialHints) {
+            // Пропустить если уже показана и showOnce = true
+            if (hint.showOnce && this.tutorialHintsShown.has(hint.id)) {
+                continue;
+            }
+
+            // Проверить, находится ли игрок в зоне триггера
+            const playerCenterX = player.x + player.width / 2;
+            const playerCenterY = player.y + player.height / 2;
+
+            if (playerCenterX >= hint.x &&
+                playerCenterX <= hint.x + hint.width &&
+                playerCenterY >= hint.y &&
+                playerCenterY <= hint.y + hint.height) {
+
+                this.activeTutorialHint = hint;
+
+                // Отметить как показанную
+                if (hint.showOnce) {
+                    this.tutorialHintsShown.add(hint.id);
+                }
+
+                break; // Показать только одну подсказку за раз
+            }
+        }
+    }
+
+    // Render tutorial hint
+    renderTutorialHint(ctx, hint) {
+        const boxWidth = 400;
+        const boxHeight = 120;
+        const padding = 20;
+
+        // Позиция подсказки (верх центр экрана, screen-space)
+        const boxX = (ctx.canvas.width - boxWidth) / 2;
+        const boxY = 80; // Под названием уровня
+
+        // Полупрозрачный фон
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        // Золотая рамка
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+        // Заголовок (белый, жирный)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(hint.title, boxX + boxWidth / 2, boxY + padding);
+
+        // Основной текст (белый)
+        ctx.font = '16px Arial';
+        ctx.fillText(hint.text, boxX + boxWidth / 2, boxY + padding + 30);
+
+        // Подтекст (серый, курсив)
+        ctx.fillStyle = '#AAAAAA';
+        ctx.font = 'italic 14px Arial';
+        ctx.fillText(hint.subtext, boxX + boxWidth / 2, boxY + padding + 55);
+
+        // Индикатор "продолжай двигаться" (мигающий)
+        const blinkSpeed = 1000; // мс
+        const opacity = (Math.sin(Date.now() / blinkSpeed * Math.PI * 2) + 1) / 2;
+        ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
+        ctx.font = '12px Arial';
+        ctx.fillText('Двигайся чтобы продолжить', boxX + boxWidth / 2, boxY + padding + 85);
+    }
+
     // Render level-specific elements
     renderLevel(ctx) {
-        // Goal rendering removed - using door system instead
+        // Рендер активной туториальной подсказки
+        if (this.activeTutorialHint) {
+            this.renderTutorialHint(ctx, this.activeTutorialHint);
+        }
     }
 
     // Get current level name

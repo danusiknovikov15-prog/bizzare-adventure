@@ -2,6 +2,68 @@
 export const level1 = {
     name: "Level 1: The Beginning",
 
+    // Флаг туториала
+    isTutorial: true,
+
+    // Туториальные подсказки
+    tutorialHints: [
+        {
+            id: "movement",
+            x: 0,
+            y: 0,
+            width: 500,
+            height: 600,
+            title: "Добро пожаловать!",
+            text: "Используй WASD или стрелки для движения",
+            subtext: "← → для движения влево/вправо",
+            showOnce: true
+        },
+        {
+            id: "jump",
+            x: 350,
+            y: 200,
+            width: 350,
+            height: 400,
+            title: "Прыжок",
+            text: "Нажми W, ↑ или SPACE для прыжка",
+            subtext: "Удерживай направление в воздухе для контроля",
+            showOnce: true
+        },
+        {
+            id: "gap",
+            x: 650,
+            y: 200,
+            width: 200,
+            height: 400,
+            title: "Длинный прыжок",
+            text: "Разбегись перед прыжком!",
+            subtext: "Скорость сохраняется в воздухе",
+            showOnce: true
+        },
+        {
+            id: "attack",
+            x: 100,
+            y: 450,
+            width: 250,
+            height: 150,
+            title: "Первый враг!",
+            text: "Нажми Z или X для атаки",
+            subtext: "Атакуй врагов чтобы победить их",
+            showOnce: true
+        },
+        {
+            id: "goal",
+            x: 2100,
+            y: 0,
+            width: 700,
+            height: 600,
+            title: "Почти у цели!",
+            text: "Доберись до золотой платформы",
+            subtext: "Дверь откроется автоматически",
+            showOnce: true
+        }
+    ],
+
     // Player spawn point
     playerSpawn: {
         x: 100,

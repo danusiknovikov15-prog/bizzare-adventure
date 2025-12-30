@@ -317,6 +317,9 @@ game.update = function(deltaTime) {
     // Update camera to follow player
     game.renderer.followTarget(player, game.canvas);
 
+    // Обновить туториальную систему
+    levelManager.updateTutorial(player);
+
     // Check if player reached the goal
     if (player.isAlive && levelManager.checkGoalReached(player)) {
         console.log('🎉 Level completed!');
