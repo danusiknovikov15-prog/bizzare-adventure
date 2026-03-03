@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn platformer_project.wsgi --bind 0.0.0.0:$PORT",
+    "startCommand": "python manage.py migrate --noinput && echo 'Migrations done' && python manage.py collectstatic --noinput && echo 'Static done' && echo 'Starting gunicorn on port '$PORT && gunicorn platformer_project.wsgi --bind 0.0.0.0:$PORT --log-level debug --access-logfile - --error-logfile -",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
