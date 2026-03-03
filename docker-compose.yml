@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: platformer-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: platformer-game
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=platformer_project.settings
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+      - DEBUG=False
+    depends_on:
+      - redis
+    restart: unless-stopped

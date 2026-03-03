@@ -1,4 +1,5 @@
 // Main entry point for the game
+// Version 9 - skin system debug
 import { Game } from './engine/Game.js';
 import { Physics } from './engine/Physics.js';
 import { Renderer } from './engine/Renderer.js';
@@ -8,6 +9,8 @@ import { InputManager } from './controls/InputManager.js';
 import { VirtualJoystick } from './controls/VirtualJoystick.js';
 import { ActionButtons } from './controls/ActionButtons.js';
 import { LevelManager } from './levels/LevelManager.js';
+import { ProgressManager } from './ProgressManager.js';
+import { castleBackgroundImages } from './levels/CastleBackgroundImage.js';
 import { level1 } from './levels/level1.js';
 import { level2 } from './levels/level2.js';
 import { level3 } from './levels/level3.js';
@@ -31,12 +34,390 @@ import { level20 } from './levels/level20.js';
 
 console.log('Game loading...');
 
+// Helper function to load castle background image for a level
+function loadCastleBackground(game, levelIndex) {
+    const castleBg = castleBackgroundImages[`level${levelIndex + 1}`];
+    if (castleBg) {
+        game.backgroundImage = castleBg.getImage();
+        return '#0a0a1a'; // Dark night sky color
+    }
+    game.backgroundImage = null;
+    return null;
+}
+
 // Auto-start game on page load
 document.addEventListener('DOMContentLoaded', () => {
     initGame();
 });
 
-// Render hotbar UI at bottom of screen
+// Item rendering functions for dynamic hotbar
+const ITEM_RENDERERS = {
+    healthPotion: (ctx, slotX, slotY, slotSize, count) => {
+        // Potion bottle icon
+        ctx.fillStyle = '#00FF00';
+        ctx.fillRect(slotX + 15, slotY + 15, 20, 25);
+        // Potion cap
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(slotX + 15, slotY + 12, 20, 6);
+        // Plus symbol
+        ctx.fillStyle = '#FFF';
+        ctx.fillRect(slotX + 23, slotY + 20, 4, 12);
+        ctx.fillRect(slotX + 19, slotY + 24, 12, 4);
+        // Item count
+        if (count > 1) {
+            ctx.fillStyle = '#FFF';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.strokeText(count.toString(), slotX + slotSize - 5, slotY + slotSize - 5);
+            ctx.fillText(count.toString(), slotX + slotSize - 5, slotY + slotSize - 5);
+        }
+    },
+    totem: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#FFD700';
+        ctx.fillStyle = '#C4A44D';
+        ctx.fillRect(centerX - 6, centerY - 10, 12, 20);
+        ctx.fillRect(centerX - 8, centerY - 14, 16, 6);
+        ctx.fillStyle = '#2E8B2E';
+        ctx.fillRect(centerX - 5, centerY - 12, 3, 3);
+        ctx.fillRect(centerX + 2, centerY - 12, 3, 3);
+        ctx.fillStyle = '#8B7332';
+        ctx.fillRect(centerX - 4, centerY - 5, 8, 2);
+        ctx.shadowBlur = 0;
+    },
+    unoReverse: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#FF0000';
+        ctx.fillStyle = '#E31B23';
+        ctx.fillRect(centerX - 10, centerY - 14, 20, 28);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(centerX - 10, centerY - 14, 20, 28);
+        ctx.fillStyle = '#FFDE00';
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, 7, 10, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    },
+    sword: (ctx, slotX, slotY, slotSize) => {
+        ctx.fillStyle = '#C0C0C0';
+        ctx.fillRect(slotX + 10, slotY + 23, 28, 4);
+        ctx.fillRect(slotX + 38, slotY + 21, 2, 8);
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(slotX + 8, slotY + 20, 4, 10);
+        ctx.fillRect(slotX + 4, slotY + 23, 6, 4);
+        ctx.fillRect(slotX + 2, slotY + 22, 4, 6);
+    },
+    lightsaber: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#7df9ff';
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(centerX - 14, centerY + 2, 12, 6);
+        ctx.fillStyle = '#444';
+        ctx.fillRect(centerX - 12, centerY + 2, 1, 6);
+        ctx.fillRect(centerX - 9, centerY + 2, 1, 6);
+        ctx.fillRect(centerX - 6, centerY + 2, 1, 6);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(centerX - 2, centerY + 3, 3, 4);
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(centerX - 13, centerY + 7, 2, 2);
+        ctx.fillStyle = 'rgba(125, 249, 255, 0.4)';
+        ctx.fillRect(centerX + 1, centerY + 3, 20, 4);
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = '#7df9ff';
+        ctx.fillRect(centerX + 1, centerY + 4, 18, 2);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(centerX + 2, centerY + 4.5, 16, 1);
+        ctx.fillStyle = '#7df9ff';
+        ctx.beginPath();
+        ctx.arc(centerX + 19, centerY + 5, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    },
+    slingshot: (ctx, slotX, slotY, slotSize) => {
+        const iconCenterX = slotX + slotSize / 2;
+        const iconCenterY = slotY + slotSize / 2;
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(iconCenterX, iconCenterY + 10);
+        ctx.lineTo(iconCenterX, iconCenterY - 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(iconCenterX, iconCenterY - 2);
+        ctx.lineTo(iconCenterX - 8, iconCenterY - 10);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(iconCenterX, iconCenterY - 2);
+        ctx.lineTo(iconCenterX + 8, iconCenterY - 10);
+        ctx.stroke();
+        ctx.strokeStyle = '#2a2a2a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(iconCenterX - 8, iconCenterY - 10);
+        ctx.lineTo(iconCenterX + 8, iconCenterY - 10);
+        ctx.stroke();
+        ctx.fillStyle = '#696969';
+        ctx.beginPath();
+        ctx.arc(iconCenterX, iconCenterY - 10, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+    },
+    evilSword: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+
+        // Glow effect
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ff3333';
+
+        // Dark blade
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(centerX - 14, centerY - 2, 28, 4);
+        ctx.fillRect(centerX + 14, centerY - 4, 3, 8);
+
+        // Red glow on blade
+        ctx.fillStyle = 'rgba(255, 51, 51, 0.6)';
+        ctx.fillRect(centerX - 12, centerY - 1, 26, 2);
+
+        // Dark crossguard
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fillRect(centerX - 16, centerY - 6, 4, 12);
+
+        // Handle (dark red)
+        ctx.fillStyle = '#5c2a2a';
+        ctx.fillRect(centerX - 22, centerY - 2, 8, 4);
+
+        // Skull pommel
+        ctx.fillStyle = '#1a0a0a';
+        ctx.beginPath();
+        ctx.arc(centerX - 24, centerY, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Red eyes on pommel
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(centerX - 25, centerY - 1, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX - 23, centerY - 1, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+    },
+
+    fryingPan: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+
+        // Pan shadow
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#ff6600';
+
+        // Pan base (circle)
+        ctx.fillStyle = '#4a4a4a';
+        ctx.beginPath();
+        ctx.ellipse(centerX + 5, centerY, 12, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pan inner (darker)
+        ctx.fillStyle = '#3a3a3a';
+        ctx.beginPath();
+        ctx.ellipse(centerX + 5, centerY, 9, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Handle
+        ctx.fillStyle = '#5c4030';
+        ctx.fillRect(centerX - 22, centerY - 2, 16, 4);
+
+        // Handle end
+        ctx.fillStyle = '#4a3020';
+        ctx.beginPath();
+        ctx.arc(centerX - 22, centerY, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fire/steam effect
+        ctx.fillStyle = 'rgba(255, 102, 0, 0.7)';
+        ctx.beginPath();
+        ctx.moveTo(centerX + 2, centerY - 6);
+        ctx.quadraticCurveTo(centerX + 4, centerY - 12, centerX + 2, centerY - 16);
+        ctx.quadraticCurveTo(centerX, centerY - 12, centerX + 2, centerY - 6);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 136, 0, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(centerX + 8, centerY - 5);
+        ctx.quadraticCurveTo(centerX + 10, centerY - 10, centerX + 8, centerY - 14);
+        ctx.quadraticCurveTo(centerX + 6, centerY - 10, centerX + 8, centerY - 5);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+    },
+
+    toilet: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+
+        // Glow effect
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#8B4513';
+
+        // Toilet base
+        ctx.fillStyle = '#f5f5f5';
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + 8, 12, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Toilet bowl
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + 2, 10, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner bowl (water)
+        ctx.fillStyle = '#87CEEB';
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + 2, 6, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tank
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(centerX - 8, centerY - 15, 16, 12);
+
+        // Tank lid
+        ctx.fillStyle = '#e0e0e0';
+        ctx.fillRect(centerX - 9, centerY - 17, 18, 3);
+
+        // Flush button
+        ctx.fillStyle = '#c0c0c0';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Face (skibidi style)
+        ctx.fillStyle = '#000000';
+        // Eyes
+        ctx.beginPath();
+        ctx.arc(centerX - 3, centerY - 1, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX + 3, centerY - 1, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Mouth
+        ctx.beginPath();
+        ctx.arc(centerX, centerY + 4, 3, 0, Math.PI);
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+    },
+
+    cleave: (ctx, slotX, slotY, slotSize) => {
+        const centerX = slotX + slotSize / 2;
+        const centerY = slotY + slotSize / 2;
+
+        // Red glow effect (Sukuna's cursed energy)
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#ff0044';
+
+        // First slash (diagonal)
+        ctx.strokeStyle = '#ff0044';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 12, centerY - 10);
+        ctx.lineTo(centerX + 12, centerY + 10);
+        ctx.stroke();
+
+        // Second slash (crossing)
+        ctx.beginPath();
+        ctx.moveTo(centerX + 10, centerY - 12);
+        ctx.lineTo(centerX - 10, centerY + 12);
+        ctx.stroke();
+
+        // Inner glow lines
+        ctx.strokeStyle = '#ff6688';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 10, centerY - 8);
+        ctx.lineTo(centerX + 10, centerY + 8);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX + 8, centerY - 10);
+        ctx.lineTo(centerX - 8, centerY + 10);
+        ctx.stroke();
+
+        // Center energy burst
+        ctx.fillStyle = '#ff0044';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+    }
+};
+
+// Shard configurations
+const SHARD_TYPES = {
+    acidShard: { color: '#7FFF00', symbol: '☣' },
+    fireShard: { color: '#FF4500', symbol: '🔥' },
+    iceShard: { color: '#00FFFF', symbol: '❄' },
+    lightningShard: { color: '#FFD700', symbol: '⚡' },
+    waterShard: { color: '#1E90FF', symbol: '💧' }
+};
+
+// Render a shard in a slot
+function renderShard(ctx, slotX, slotY, slotSize, shardType, count) {
+    const shard = SHARD_TYPES[shardType];
+    if (!shard) return;
+
+    const centerX = slotX + slotSize / 2;
+    const centerY = slotY + slotSize / 2;
+
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = shard.color;
+    ctx.fillStyle = shard.color;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - 12);
+    ctx.lineTo(centerX + 8, centerY);
+    ctx.lineTo(centerX, centerY + 12);
+    ctx.lineTo(centerX - 8, centerY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(shard.symbol, centerX, centerY);
+
+    if (count > 1) {
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(count.toString(), slotX + slotSize - 5, slotY + slotSize - 5);
+        ctx.fillText(count.toString(), slotX + slotSize - 5, slotY + slotSize - 5);
+    }
+}
+
+// Render hotbar UI at bottom of screen (dynamic slot-based system)
 function renderHotbar(ctx, player, canvas) {
     const slotSize = 50;
     const slotSpacing = 10;
@@ -44,139 +425,78 @@ function renderHotbar(ctx, player, canvas) {
     const startX = (canvas.width - totalWidth) / 2;
     const startY = canvas.height - slotSize - 20;
 
+    // Get all slots from inventory
+    const slots = player.inventory.getAllSlots();
+
     for (let i = 0; i < player.hotbarSlots; i++) {
         const slotX = startX + (i * (slotSize + slotSpacing));
         const slotY = startY;
 
         // Slot background
         if (i === player.selectedSlot) {
-            // Highlighted slot (selected)
             ctx.fillStyle = '#444';
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 3;
         } else {
-            // Normal slot
             ctx.fillStyle = '#222';
             ctx.strokeStyle = '#666';
             ctx.lineWidth = 2;
         }
 
-        // Draw slot box
         ctx.fillRect(slotX, slotY, slotSize, slotSize);
         ctx.strokeRect(slotX, slotY, slotSize, slotSize);
 
-        // Slot 0: Health Potions
-        if (i === 0) {
-            const potionCount = player.inventory.getItemCount('healthPotion');
-            if (potionCount > 0) {
-                // Potion bottle icon
-                ctx.fillStyle = '#00FF00';
-                ctx.fillRect(slotX + 15, slotY + 15, 20, 25);
+        // Render item in this slot
+        const slotItem = slots[i];
+        if (slotItem) {
+            const itemType = slotItem.type;
+            const count = slotItem.count;
 
-                // Potion cap
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(slotX + 15, slotY + 12, 20, 6);
-
-                // Plus symbol
-                ctx.fillStyle = '#FFF';
-                ctx.fillRect(slotX + 23, slotY + 20, 4, 12);
-                ctx.fillRect(slotX + 19, slotY + 24, 12, 4);
-
-                // Item count
-                ctx.fillStyle = '#FFF';
-                ctx.font = 'bold 14px Arial';
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'bottom';
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 3;
-                ctx.strokeText(potionCount.toString(), slotX + slotSize - 5, slotY + slotSize - 5);
-                ctx.fillText(potionCount.toString(), slotX + slotSize - 5, slotY + slotSize - 5);
+            // Check if it's a shard
+            if (SHARD_TYPES[itemType]) {
+                renderShard(ctx, slotX, slotY, slotSize, itemType, count);
+            }
+            // Check for specific item renderers
+            else if (ITEM_RENDERERS[itemType]) {
+                ITEM_RENDERERS[itemType](ctx, slotX, slotY, slotSize, count);
             }
         }
 
-        // Slot 1: Equipped Sword (only if no slingshot)
-        if (i === 1 && player.hasSword && !player.hasSlingshot) {
-            // Sword icon (silver blade with gold handle)
-            // Blade (silver)
-            ctx.fillStyle = '#C0C0C0';
-            ctx.fillRect(slotX + 10, slotY + 23, 28, 4);
-
-            // Blade tip (pointed)
-            ctx.fillRect(slotX + 38, slotY + 21, 2, 8);
-
-            // Crossguard (gold)
-            ctx.fillStyle = '#FFD700';
-            ctx.fillRect(slotX + 8, slotY + 20, 4, 10);
-
-            // Handle (gold)
-            ctx.fillRect(slotX + 4, slotY + 23, 6, 4);
-
-            // Pommel (gold)
-            ctx.fillRect(slotX + 2, slotY + 22, 4, 6);
-
-            // Equipped indicator (E)
-            ctx.fillStyle = '#FFD700';
-            ctx.font = 'bold 10px Arial';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'bottom';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.strokeText('E', slotX + slotSize - 5, slotY + slotSize - 5);
-            ctx.fillText('E', slotX + slotSize - 5, slotY + slotSize - 5);
-        }
-
-        // Slot 2: Equipped Slingshot
-        if (i === 2 && player.hasSlingshot) {
-            // Center position for drawing
-            const iconCenterX = slotX + slotSize / 2;
-            const iconCenterY = slotY + slotSize / 2;
-
-            // Wood frame (Y-shape) - brown
-            ctx.strokeStyle = '#8B4513';
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-
-            // Handle (vertical)
-            ctx.beginPath();
-            ctx.moveTo(iconCenterX, iconCenterY + 10);
-            ctx.lineTo(iconCenterX, iconCenterY - 2);
-            ctx.stroke();
-
-            // Left prong
-            ctx.beginPath();
-            ctx.moveTo(iconCenterX, iconCenterY - 2);
-            ctx.lineTo(iconCenterX - 8, iconCenterY - 10);
-            ctx.stroke();
-
-            // Right prong
-            ctx.beginPath();
-            ctx.moveTo(iconCenterX, iconCenterY - 2);
-            ctx.lineTo(iconCenterX + 8, iconCenterY - 10);
-            ctx.stroke();
-
-            // Elastic band (black)
-            ctx.strokeStyle = '#2a2a2a';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(iconCenterX - 8, iconCenterY - 10);
-            ctx.lineTo(iconCenterX + 8, iconCenterY - 10);
-            ctx.stroke();
-
-            // Stone projectile (gray)
-            ctx.fillStyle = '#696969';
-            ctx.beginPath();
-            ctx.arc(iconCenterX, iconCenterY - 10, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Equipped indicator (E)
-            ctx.fillStyle = '#FFD700';
-            ctx.font = 'bold 10px Arial';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'bottom';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.strokeText('E', slotX + slotSize - 5, slotY + slotSize - 5);
-            ctx.fillText('E', slotX + slotSize - 5, slotY + slotSize - 5);
+        // Also render player equipment that's not in inventory slots
+        // (backwards compatibility for items like totem, sword, slingshot, lightsaber)
+        if (!slotItem) {
+            // Find first empty slot for equipped items
+            if (player.hasTotem && !slots.some(s => s && s.type === 'totem')) {
+                const totemSlot = player.inventory.findItemSlot('totem');
+                if (totemSlot === -1 && i === player.inventory.findEmptySlot()) {
+                    // Auto-add totem to inventory if not there
+                    player.inventory.addItem('totem', 1);
+                }
+            }
+            if (player.hasUnoReverse && !slots.some(s => s && s.type === 'unoReverse')) {
+                const unoSlot = player.inventory.findItemSlot('unoReverse');
+                if (unoSlot === -1 && i === player.inventory.findEmptySlot()) {
+                    player.inventory.addItem('unoReverse', 1);
+                }
+            }
+            if (player.hasSword && !player.hasLightsaber && !slots.some(s => s && s.type === 'sword')) {
+                const swordSlot = player.inventory.findItemSlot('sword');
+                if (swordSlot === -1 && i === player.inventory.findEmptySlot()) {
+                    player.inventory.addItem('sword', 1);
+                }
+            }
+            if (player.hasLightsaber && !slots.some(s => s && s.type === 'lightsaber')) {
+                const lightsaberSlot = player.inventory.findItemSlot('lightsaber');
+                if (lightsaberSlot === -1 && i === player.inventory.findEmptySlot()) {
+                    player.inventory.addItem('lightsaber', 1);
+                }
+            }
+            if (player.hasSlingshot && !slots.some(s => s && s.type === 'slingshot')) {
+                const slingshotSlot = player.inventory.findItemSlot('slingshot');
+                if (slingshotSlot === -1 && i === player.inventory.findEmptySlot()) {
+                    player.inventory.addItem('slingshot', 1);
+                }
+            }
         }
 
         // Hotkey number
@@ -192,7 +512,7 @@ function renderHotbar(ctx, player, canvas) {
 }
 
 // Initialize the game (wrapped in function for menu)
-function initGame() {
+async function initGame() {
 const game = new Game('gameCanvas');
 window.game = game; // Make game accessible globally for pause/resume
 
@@ -208,6 +528,10 @@ const combatSystem = new CombatSystem();
 // Initialize level manager
 const levelManager = new LevelManager(game);
 
+// Initialize progress manager
+const progressManager = new ProgressManager(game);
+game.progressManager = progressManager;
+
 // Track current level
 let currentLevelIndex = 0;
 const levels = [
@@ -219,11 +543,89 @@ const levels = [
 let showLevelSelector = false; // Level selection menu state
 let showItemSpawnMenu = false; // Item spawn menu state
 
-// Load level 1
+// Load saved progress if available
+if (window.PLAYER_PROFILE) {
+    const savedProgress = await progressManager.loadProgress();
+    if (savedProgress && savedProgress.currentLevel > 1) {
+        currentLevelIndex = savedProgress.currentLevel - 1;
+        console.log(`📂 Loaded saved progress - starting at level ${savedProgress.currentLevel}`);
+    }
+}
+
+// Store currentLevelIndex on game for ProgressManager
+game.currentLevelIndex = currentLevelIndex;
+
+// Load level
 const levelInfo = levelManager.loadLevel(levels[currentLevelIndex]);
+
+// Load castle background for this level
+const bgColor = loadCastleBackground(game, currentLevelIndex);
+if (bgColor) {
+    levelInfo.backgroundColor = bgColor;
+}
 
 // Create player at spawn point
 const player = new Player(levelInfo.playerSpawn.x, levelInfo.playerSpawn.y);
+
+// Load and apply equipped skin
+try {
+    console.log('🎨 Fetching skin data from API...');
+    const skinResponse = await fetch('/api/shop/inventory/');
+    const skinData = await skinResponse.json();
+    console.log('🎨 Skin API response:', skinData);
+    if (skinData.success && skinData.equipped_skin && skinData.equipped_skin !== 'default') {
+        console.log(`🎨 Applying skin: ${skinData.equipped_skin}`);
+        player.applySkin(skinData.equipped_skin);
+        console.log(`🎨 Player color after applySkin: ${player.color}`);
+    } else {
+        console.log('🎨 Using default skin');
+    }
+} catch (error) {
+    console.log('❌ Could not load skin data:', error);
+}
+
+// Load and apply equipped title
+try {
+    console.log('🏷️ Fetching title data from API...');
+    const titleResponse = await fetch('/api/title/equipped/');
+    const titleData = await titleResponse.json();
+    console.log('🏷️ Title API response:', titleData);
+    if (titleData.success && titleData.equipped_title) {
+        console.log(`🏷️ Applying title: ${titleData.equipped_title}`);
+        player.equippedTitle = titleData.equipped_title;
+    } else {
+        console.log('🏷️ No title equipped');
+    }
+} catch (error) {
+    console.log('❌ Could not load title data:', error);
+}
+
+// Load player inventory from database
+try {
+    console.log('📦 Loading player inventory from API...');
+    const inventoryResponse = await fetch('/api/load/');
+    const inventoryData = await inventoryResponse.json();
+    console.log('📦 Inventory API response:', inventoryData);
+    if (inventoryData.success && inventoryData.inventory) {
+        console.log(`📦 Found ${inventoryData.inventory.length} items in inventory`);
+        for (const item of inventoryData.inventory) {
+            console.log(`📦 Loading item: ${item.item_id} (type: ${item.item_type})`);
+            // Apply weapons (only lightsaber, sword must be picked up)
+            if (item.item_type === 'weapons') {
+                if (item.item_id === 'lightsaber') {
+                    console.log('⚔️ Equipping lightsaber from inventory!');
+                    player.equipLightsaber();
+                    console.log(`⚔️ hasLightsaber: ${player.hasLightsaber}, damage: ${player.attackDamage}`);
+                }
+                // Sword is NOT auto-equipped - must be picked up in game
+            }
+        }
+    } else {
+        console.log('📦 No inventory found or empty');
+    }
+} catch (error) {
+    console.log('❌ Could not load inventory data:', error);
+}
 
 // Create input manager (keyboard + mobile)
 const inputManager = new InputManager();
@@ -237,6 +639,60 @@ inputManager.bindMobileControls(joystick, actionButtons);
 
 // Add player to game
 game.addEntity(player);
+game.player = player; // Make player accessible globally for admin panel
+
+// Apply item effect function for admin panel
+game.applyItemEffect = function(itemId) {
+    console.log(`🎁 Applying item effect: ${itemId}`);
+    switch(itemId) {
+        case 'lightsaber':
+            player.equipLightsaber();
+            console.log(`⚔️ Lightsaber equipped! hasLightsaber: ${player.hasLightsaber}, damage: ${player.attackDamage}`);
+            break;
+        case 'weapon_fire_sword':
+            player.equipSword();
+            break;
+        case 'weapon_ice_bow':
+            player.equipSlingshot();
+            break;
+        case 'class_jedi':
+            player.equipLightsaber();
+            console.log(`⚔️ Jedi class - Lightsaber equipped! hasLightsaber: ${player.hasLightsaber}`);
+            break;
+        case 'class_enemy_king':
+            player.equipEnemyKing();
+            console.log(`👑 Enemy King class equipped! Damage bonus: +20%`);
+            break;
+        case 'class_chef':
+            player.equipChef();
+            console.log(`👨‍🍳 Chef class equipped! Attack speed: +15%`);
+            break;
+        case 'class_skibidi':
+            player.equipSkibidi();
+            console.log(`🚽 Skibidi Toilet equipped! Jump +30%, Speed +25%`);
+            break;
+        case 'class_sukuna':
+            player.equipSukuna();
+            console.log(`👹 Sukuna equipped! +50% damage, Cleave attack!`);
+            break;
+        case 'class_boxer':
+            player.equipBoxer();
+            console.log(`🥊 Boxer equipped! +25% damage, faster attacks!`);
+            break;
+        case 'health_potion':
+            player.inventory.addItem('healthPotion', 1);
+            break;
+        case 'upgrade_health':
+            player.maxHealth += 25;
+            player.health = player.maxHealth;
+            break;
+        case 'upgrade_damage':
+            player.attackDamage = Math.floor(player.attackDamage * 1.15);
+            break;
+        default:
+            console.log(`Unknown item: ${itemId}`);
+    }
+};
 
 // Update player input each frame and camera
 const originalUpdate = game.update.bind(game);
@@ -256,6 +712,9 @@ game.update = function(deltaTime) {
     const slingshots = levelManager.getSlingshots();
     const eliteArmors = levelManager.getEliteArmors();
     const eliteSwords = levelManager.getEliteSwords();
+    const elementalShards = []; // No longer needed - shards go directly to inventory
+    const totems = levelManager.getTotems();
+    const unoCards = levelManager.getUnoCards();
 
     // Debug: Log elite enemies every 60 frames (once per second at 60fps)
     if (Math.random() < 0.016) { // ~1 in 60 chance
@@ -288,10 +747,10 @@ game.update = function(deltaTime) {
         }
     }
 
-    combatSystem.update(player, enemies, potions, armors, swords, enemySwords, slingshots, eliteArmors, eliteSwords);
+    combatSystem.update(player, enemies, potions, armors, swords, enemySwords, slingshots, eliteArmors, eliteSwords, elementalShards, totems, unoCards, deltaTime);
 
-    // Clean up dead enemies (will drop potions, armor, and swords)
-    levelManager.cleanupDeadEnemies();
+    // Clean up dead enemies (will drop potions, armor, swords, and elemental shards)
+    levelManager.cleanupDeadEnemies(player);
 
     // Clean up collected potions
     levelManager.cleanupCollectedPotions();
@@ -313,6 +772,14 @@ game.update = function(deltaTime) {
 
     // Clean up collected elite swords
     levelManager.cleanupCollectedEliteSwords();
+
+    // Clean up collected totems
+    levelManager.cleanupCollectedTotems();
+
+    // Clean up collected UNO cards
+    levelManager.cleanupCollectedUnoCards();
+
+    // Note: Elemental shards no longer need cleanup - they go directly to inventory
 
     // Update camera to follow player
     game.renderer.followTarget(player, game.canvas);
@@ -336,12 +803,24 @@ game.update = function(deltaTime) {
             // Move to next level after short delay
             setTimeout(() => {
                 currentLevelIndex++;
+                game.currentLevelIndex = currentLevelIndex;
                 if (currentLevelIndex < levels.length) {
                     const nextLevel = levels[currentLevelIndex];
                     console.log(`🚪 Loading ${nextLevel.name}!`);
                     const newLevelInfo = levelManager.loadLevel(nextLevel);
+
+                    // Load castle background for new level
+                    const bgColor = loadCastleBackground(game, currentLevelIndex);
+                    if (bgColor) {
+                        newLevelInfo.backgroundColor = bgColor;
+                        levelInfo.backgroundColor = bgColor; // Update current levelInfo reference
+                    }
+
                     player.reset(newLevelInfo.playerSpawn.x, newLevelInfo.playerSpawn.y);
                     console.log(`✨ ${nextLevel.name} loaded!`);
+
+                    // Record level completion and save progress
+                    progressManager.recordLevelComplete();
                 }
             }, 500); // 0.5 second delay
         }
@@ -359,6 +838,7 @@ game.update = function(deltaTime) {
         // Player fell into death zone - kill and respawn
         console.log('💀 Player fell off the map!');
         player.takeDamage(player.health); // Kill player
+        progressManager.recordDeath(); // Track death
 
         // Respawn after short delay
         setTimeout(() => {
@@ -386,6 +866,22 @@ game.render = function() {
 
     // Apply camera translation
     game.ctx.translate(-game.renderer.cameraX, -game.renderer.cameraY);
+
+    // Render background image FIRST (behind everything)
+    if (game.backgroundImage) {
+        // Draw the background image, positioned with parallax effect
+        const parallaxFactor = 0.5; // Background moves slower than foreground
+        const bgX = game.renderer.cameraX * parallaxFactor;
+        const bgY = 0;
+
+        game.ctx.drawImage(
+            game.backgroundImage,
+            -bgX, // Offset by parallax
+            bgY,
+            game.backgroundImage.width,
+            game.backgroundImage.height
+        );
+    }
 
     // Render platforms
     for (const platform of game.platforms) {
@@ -457,8 +953,26 @@ game.render = function() {
     game.ctx.font = '14px Arial';
     game.ctx.fillStyle = '#00FF00';
     const potionCount = player.inventory.getItemCount('healthPotion');
-    const inventoryY = player.hasArmor ? 70 : 50;
+    let inventoryY = player.hasArmor ? 70 : 50;
     game.ctx.fillText(`Potions: ${potionCount} (Press E)`, 10, inventoryY);
+
+    // Show equipped weapon
+    if (player.hasLightsaber) {
+        inventoryY += 18;
+        game.ctx.fillStyle = '#7df9ff';
+        game.ctx.shadowColor = '#7df9ff';
+        game.ctx.shadowBlur = 8;
+        game.ctx.fillText(`⚔ Lightsaber (DMG: ${player.lightsaberDamage})`, 10, inventoryY);
+        game.ctx.shadowBlur = 0;
+    } else if (player.hasSword) {
+        inventoryY += 18;
+        game.ctx.fillStyle = '#C0C0C0';
+        game.ctx.fillText(`⚔ Sword (DMG: ${player.attackDamage})`, 10, inventoryY);
+    } else if (player.hasSlingshot) {
+        inventoryY += 18;
+        game.ctx.fillStyle = '#8B4513';
+        game.ctx.fillText(`🎯 Slingshot`, 10, inventoryY);
+    }
 
     // Render hotbar
     renderHotbar(game.ctx, player, game.canvas);
@@ -596,37 +1110,32 @@ game.render = function() {
         game.ctx.fillStyle = '#FFD700';
         game.ctx.font = 'bold 48px Arial';
         game.ctx.textAlign = 'center';
-        game.ctx.fillText('SPAWN ITEM', game.canvas.width / 2, 100);
+        game.ctx.fillText('SPAWN ITEM', game.canvas.width / 2, 80);
 
         // Item list
         game.ctx.font = '24px Arial';
         const items = [
-            { key: '1', name: 'Health Potion', type: 'healthPotion' },
-            { key: '2', name: 'Armor', type: 'armor' },
-            { key: '3', name: 'Sword', type: 'sword' },
-            { key: '4', name: 'Enemy Sword', type: 'enemySword' },
-            { key: '5', name: 'Slingshot', type: 'slingshot' },
-            { key: '6', name: '⚔️ Elite Armor (30 HP + Thorns)', type: 'eliteArmor' },
-            { key: '7', name: '👑 Elite Sword (20 Damage)', type: 'eliteSword' }
+            { key: '1', name: 'Health Potion', color: '#00FF00' },
+            { key: '2', name: 'Armor', color: '#FFFFFF' },
+            { key: '3', name: 'Sword', color: '#FFFFFF' },
+            { key: '4', name: 'Enemy Sword', color: '#FFFFFF' },
+            { key: '5', name: 'Slingshot', color: '#FFFFFF' },
+            { key: '6', name: '⚔️ Elite Armor (30 HP + Thorns)', color: '#FFD700' },
+            { key: '7', name: '👑 Elite Sword (20 Damage)', color: '#FFD700' },
+            { key: '8', name: '🗿 Totem of Undying (Save from death)', color: '#C4A44D' },
+            { key: '9', name: '🔄 UNO Reverse Card (Reflect damage)', color: '#E31B23' }
         ];
 
         for (let i = 0; i < items.length; i++) {
-            const y = 160 + i * 50;
-
-            // Highlight elite items with gold color
-            if (i >= 5) {
-                game.ctx.fillStyle = '#FFD700'; // Gold for elite items
-            } else {
-                game.ctx.fillStyle = '#FFFFFF';
-            }
-
+            const y = 140 + i * 45;
+            game.ctx.fillStyle = items[i].color;
             game.ctx.fillText(`${items[i].key}. ${items[i].name}`, game.canvas.width / 2, y);
         }
 
         // Instructions
         game.ctx.font = '20px Arial';
         game.ctx.fillStyle = '#AAAAAA';
-        game.ctx.fillText('Press 1-7 to spawn item, I to close', game.canvas.width / 2, game.canvas.height - 50);
+        game.ctx.fillText('Press 1-9 to spawn item, I to close', game.canvas.width / 2, game.canvas.height - 50);
     }
 };
 
@@ -634,8 +1143,17 @@ game.render = function() {
 game.init();
 game.start();
 
+// Start game session tracking
+progressManager.startSession();
+
 console.log('Game started successfully!');
 console.log('Player controls ready (Keyboard + Mobile)!');
+
+// Save progress when leaving page
+window.addEventListener('beforeunload', () => {
+    progressManager.saveProgress();
+    progressManager.endSession();
+});
 
 // Function to load next level
 function loadNextLevel() {
@@ -647,18 +1165,32 @@ function loadNextLevel() {
     if (aliveEnemies.length === 0 && initialEnemyCount > 0) {
         // All enemies defeated - move to next level
         currentLevelIndex++;
+        game.currentLevelIndex = currentLevelIndex;
 
         if (currentLevelIndex >= levels.length) {
             console.log('🎉 ALL LEVELS COMPLETED!');
             currentLevelIndex = levels.length - 1; // Stay on last level
+            game.currentLevelIndex = currentLevelIndex;
+            progressManager.saveProgress(); // Save final progress
             return;
         }
 
         const nextLevel = levels[currentLevelIndex];
         console.log(`🚪 Loading ${nextLevel.name}!`);
         const newLevelInfo = levelManager.loadLevel(nextLevel);
+
+        // Load castle background for new level
+        const bgColor = loadCastleBackground(game, currentLevelIndex);
+        if (bgColor) {
+            newLevelInfo.backgroundColor = bgColor;
+            levelInfo.backgroundColor = bgColor; // Update current levelInfo reference
+        }
+
         player.reset(newLevelInfo.playerSpawn.x, newLevelInfo.playerSpawn.y);
         console.log(`✨ ${nextLevel.name} loaded!`);
+
+        // Record level completion and save progress
+        progressManager.recordLevelComplete();
 
         // Clear the button after loading next level
         window.nextLevelButton = null;
@@ -722,6 +1254,17 @@ document.addEventListener('keydown', (e) => {
             // Not near door and no potions, use hotbar item
             player.useHotbarItem();
         }
+    } else if (e.code === 'KeyP') {
+        // Show inventory in console for debugging
+        console.log('📦 INVENTORY:');
+        console.log(player.inventory.getAllItems());
+        const items = player.inventory.getAllItems();
+        for (const [itemName, count] of Object.entries(items)) {
+            console.log(`  - ${itemName}: ${count}`);
+        }
+        // Also test adding a shard
+        console.log('🧪 TEST: Adding acid shard to inventory');
+        player.collectElementalShard('acid');
     } else if (e.code === 'KeyL') {
         // Toggle level selector menu
         showLevelSelector = !showLevelSelector;
@@ -732,7 +1275,7 @@ document.addEventListener('keydown', (e) => {
         showItemSpawnMenu = !showItemSpawnMenu;
         if (showItemSpawnMenu) showLevelSelector = false; // Close level selector if open
         console.log(showItemSpawnMenu ? '✅ Item spawn menu opened (1-7 to spawn)' : '❌ Item spawn menu closed');
-    } else if (showItemSpawnMenu && e.code >= 'Digit1' && e.code <= 'Digit7') {
+    } else if (showItemSpawnMenu && e.code >= 'Digit1' && e.code <= 'Digit9') {
         // Spawn item when item menu is open
         console.log(`🎯 Spawn condition met! Menu: ${showItemSpawnMenu}, Key: ${e.code}`);
         const itemIndex = parseInt(e.code.slice(-1)) - 1;
@@ -743,7 +1286,9 @@ document.addEventListener('keydown', (e) => {
             { type: 'enemySword', name: 'Enemy Sword' },
             { type: 'slingshot', name: 'Slingshot' },
             { type: 'eliteArmor', name: 'Elite Armor' },
-            { type: 'eliteSword', name: 'Elite Sword' }
+            { type: 'eliteSword', name: 'Elite Sword' },
+            { type: 'totem', name: 'Totem of Undying' },
+            { type: 'unoCard', name: 'UNO Reverse Card' }
         ];
 
         if (itemIndex < items.length) {
@@ -755,25 +1300,37 @@ document.addEventListener('keydown', (e) => {
             const spawnY = player.y;
             console.log(`📍 Spawn position: x=${spawnX}, y=${spawnY}`);
 
-            const item = levelManager.itemFactory.createItem(
-                selectedItem.type,
-                spawnX,
-                spawnY
-            );
-
-            if (item) {
-                console.log(`✅ Item created:`, item);
-                const categoryMap = levelManager.itemFactory.getCategoryMap();
-                const category = categoryMap[selectedItem.type];
-                console.log(`📦 Category: ${category}`);
-
-                levelManager.entityManager.addEntity(category, item);
+            // Special handling for totem
+            if (selectedItem.type === 'totem') {
+                levelManager.spawnTotem(spawnX, spawnY);
                 console.log(`✨ Spawned ${selectedItem.name} near player!`);
-
-                // Close menu after spawning
+                showItemSpawnMenu = false;
+            } else if (selectedItem.type === 'unoCard') {
+                // Special handling for UNO Reverse Card
+                levelManager.spawnUnoCard(spawnX, spawnY);
+                console.log(`✨ Spawned ${selectedItem.name} near player!`);
                 showItemSpawnMenu = false;
             } else {
-                console.error(`❌ Failed to create item: ${selectedItem.type}`);
+                const item = levelManager.itemFactory.createItem(
+                    selectedItem.type,
+                    spawnX,
+                    spawnY
+                );
+
+                if (item) {
+                    console.log(`✅ Item created:`, item);
+                    const categoryMap = levelManager.itemFactory.getCategoryMap();
+                    const category = categoryMap[selectedItem.type];
+                    console.log(`📦 Category: ${category}`);
+
+                    levelManager.entityManager.addEntity(category, item);
+                    console.log(`✨ Spawned ${selectedItem.name} near player!`);
+
+                    // Close menu after spawning
+                    showItemSpawnMenu = false;
+                } else {
+                    console.error(`❌ Failed to create item: ${selectedItem.type}`);
+                }
             }
         }
     } else if (showLevelSelector) {

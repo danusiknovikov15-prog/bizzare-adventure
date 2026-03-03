@@ -1,0 +1,368 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Platformer Game</title>
+    <link rel="stylesheet" href="{% static 'game/css/main.css' %}">
+    <style>
+        /* Admin Panel Styles */
+        .admin-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ff6b00, #ff9500);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(255, 107, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        .admin-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 107, 0, 0.6);
+        }
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 10px;
+            background: rgba(20, 20, 30, 0.95);
+            border: 2px solid #ff6b00;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .admin-panel.active {
+            display: block;
+        }
+        .admin-panel h3 {
+            color: #ff9500;
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            text-align: center;
+            border-bottom: 1px solid #ff6b00;
+            padding-bottom: 10px;
+        }
+        .admin-section {
+            margin-bottom: 15px;
+        }
+        .admin-section label {
+            display: block;
+            color: #ccc;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        .admin-section input,
+        .admin-section select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #2a2a3a;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .admin-section input:focus,
+        .admin-section select:focus {
+            outline: none;
+            border-color: #ff6b00;
+        }
+        .admin-btn-action {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .admin-btn-coins {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #333;
+        }
+        .admin-btn-level {
+            background: linear-gradient(135deg, #00c853, #00e676);
+            color: white;
+        }
+        .admin-btn-item {
+            background: linear-gradient(135deg, #2196f3, #03a9f4);
+            color: white;
+        }
+        .admin-btn-action:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+        .admin-status {
+            color: #4caf50;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 18px;
+        }
+        .admin-status.error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    {% if profile.rank == 'admin' or profile.rank == 'owner' %}
+    <!-- Admin Panel -->
+    <button class="admin-btn" onclick="toggleAdminPanel()">Admin</button>
+    <div id="adminPanel" class="admin-panel">
+        <h3>Admin Panel</h3>
+
+        <div class="admin-section">
+            <label>Add Coins</label>
+            <input type="number" id="adminCoins" value="1000" min="1" max="1000000">
+            <button class="admin-btn-action admin-btn-coins" onclick="adminAddCoins()">Add Coins</button>
+        </div>
+
+        <div class="admin-section">
+            <label>Set Level</label>
+            <select id="adminLevel">
+                {% for i in level_range %}
+                <option value="{{ i }}" {% if i == profile.current_level %}selected{% endif %}>Level {{ i }}</option>
+                {% endfor %}
+            </select>
+            <button class="admin-btn-action admin-btn-level" onclick="adminSetLevel()">Change Level</button>
+        </div>
+
+        <div class="admin-section">
+            <label>Quick Classes</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <button class="admin-btn-action" style="background: linear-gradient(135deg, #7df9ff, #00bcd4); flex: 1; padding: 8px; font-size: 11px;" onclick="adminGiveClass('class_jedi')">⚔️ Jedi</button>
+                <button class="admin-btn-action" style="background: linear-gradient(135deg, #ff3333, #8b0000); flex: 1; padding: 8px; font-size: 11px;" onclick="adminGiveClass('class_enemy_king')">👑 King</button>
+                <button class="admin-btn-action" style="background: linear-gradient(135deg, #ffffff, #e0e0e0); color: #333; flex: 1; padding: 8px; font-size: 11px;" onclick="adminGiveClass('class_chef')">👨‍🍳 Chef</button>
+            </div>
+            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <button class="admin-btn-action" style="background: linear-gradient(135deg, #8B4513, #654321); flex: 1; padding: 8px; font-size: 11px;" onclick="adminGiveClass('class_skibidi')">🚽 Skibidi</button>
+                <button class="admin-btn-action" style="background: linear-gradient(135deg, #ff4444, #cc0000); flex: 1; padding: 8px; font-size: 11px;" onclick="adminGiveClass('class_boxer')">🥊 Boxer</button>
+            </div>
+            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                <button class="admin-btn-action" style="background: linear-gradient(135deg, #ff0044, #4a0a2a); flex: 1; padding: 8px; font-size: 11px;" onclick="adminGiveClass('class_sukuna')">👹 Sukuna</button>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <label>Give Item</label>
+            <select id="adminItem">
+                <optgroup label="-- Classes --">
+                    <option value="class_sukuna">Sukuna (+50% damage, Cleave)</option>
+                    <option value="class_boxer">Boxer (+25% damage, fast attacks)</option>
+                    <option value="class_jedi">Jedi Class (+ Lightsaber)</option>
+                    <option value="class_enemy_king">Enemy King (+20% damage)</option>
+                    <option value="class_chef">Chef (+15% attack speed)</option>
+                    <option value="class_skibidi">Skibidi (+30% jump, +25% speed)</option>
+                </optgroup>
+                <optgroup label="-- Weapons --">
+                    <option value="lightsaber">Lightsaber</option>
+                    <option value="weapon_fire_sword">Fire Sword</option>
+                    <option value="weapon_ice_bow">Ice Bow</option>
+                    <option value="weapon_lightning">Lightning Staff</option>
+                </optgroup>
+                <optgroup label="-- Skins --">
+                    <option value="skin_knight">Knight Skin</option>
+                    <option value="skin_ninja">Ninja Skin</option>
+                    <option value="skin_robot">Robot Skin</option>
+                    <option value="skin_dragon">Dragon Skin</option>
+                </optgroup>
+                <optgroup label="-- Upgrades --">
+                    <option value="upgrade_health">Max Health +25</option>
+                    <option value="upgrade_speed">Speed +10%</option>
+                    <option value="upgrade_damage">Damage +15%</option>
+                    <option value="upgrade_armor">Armor +20%</option>
+                </optgroup>
+                <optgroup label="-- Consumables --">
+                    <option value="health_potion">Health Potion</option>
+                    <option value="speed_boost">Speed Boost</option>
+                    <option value="damage_boost">Damage Boost</option>
+                    <option value="shield">Shield</option>
+                    <option value="double_jump">Double Jump</option>
+                </optgroup>
+            </select>
+            <button class="admin-btn-action admin-btn-item" onclick="adminGiveItem()">Give Item</button>
+        </div>
+
+        <div id="adminStatus" class="admin-status"></div>
+    </div>
+    {% endif %}
+
+    <div class="controls-overlay">
+        <div id="joystick" class="joystick-area"></div>
+        <div id="actionButtons" class="action-buttons"></div>
+    </div>
+
+    <!-- Hidden profile data for JavaScript -->
+    <script>
+        window.PLAYER_PROFILE = {
+            current_level: {{ profile.current_level }},
+            max_level_reached: {{ profile.max_level_reached }},
+            total_kills: {{ profile.total_kills }},
+            total_deaths: {{ profile.total_deaths }},
+            total_boss_kills: {{ profile.total_boss_kills }},
+            rank: '{{ profile.rank }}',
+        };
+
+        // Admin Panel Functions
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            panel.classList.toggle('active');
+        }
+
+        function showAdminStatus(message, isError = false) {
+            const status = document.getElementById('adminStatus');
+            status.textContent = message;
+            status.className = 'admin-status' + (isError ? ' error' : '');
+            setTimeout(() => { status.textContent = ''; }, 3000);
+        }
+
+        function adminAddCoins() {
+            const amount = parseInt(document.getElementById('adminCoins').value);
+            if (amount <= 0) {
+                showAdminStatus('Invalid amount', true);
+                return;
+            }
+
+            fetch('{% url "game:admin_add_coins" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ amount: amount })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showAdminStatus('Added ' + amount + ' coins!');
+                    if (window.game && window.game.player) {
+                        window.game.player.coins = (window.game.player.coins || 0) + amount;
+                    }
+                } else {
+                    showAdminStatus(data.error || 'Error', true);
+                }
+            })
+            .catch(e => showAdminStatus('Network error', true));
+        }
+
+        function adminSetLevel() {
+            const level = parseInt(document.getElementById('adminLevel').value);
+
+            fetch('{% url "game:admin_set_level" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ level: level })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showAdminStatus('Level set to ' + level + '!');
+                    window.PLAYER_PROFILE.current_level = level;
+                    if (window.game) {
+                        window.game.loadLevel(level);
+                    }
+                } else {
+                    showAdminStatus(data.error || 'Error', true);
+                }
+            })
+            .catch(e => showAdminStatus('Network error', true));
+        }
+
+        function adminGiveClass(classId) {
+            console.log('Admin giving class:', classId);
+
+            fetch('{% url "game:admin_give_item" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ item_id: classId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showAdminStatus('Class equipped: ' + classId.replace('class_', '') + '!');
+                    if (window.game && window.game.player) {
+                        window.game.applyItemEffect(classId);
+                    }
+                } else {
+                    showAdminStatus(data.error || 'Error', true);
+                }
+            })
+            .catch(e => showAdminStatus('Network error', true));
+        }
+
+        function adminGiveItem() {
+            const itemId = document.getElementById('adminItem').value;
+            console.log('Admin giving item:', itemId);
+
+            fetch('{% url "game:admin_give_item" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ item_id: itemId })
+            })
+            .then(r => {
+                console.log('Response status:', r.status);
+                return r.json();
+            })
+            .then(data => {
+                console.log('Admin item response:', data);
+                if (data.success) {
+                    showAdminStatus('Item given: ' + itemId.replace('_', ' ') + '!');
+                    // Apply item effect in game
+                    if (window.game && window.game.player) {
+                        window.game.applyItemEffect(itemId);
+                    }
+                } else {
+                    showAdminStatus(data.error || 'Error', true);
+                }
+            })
+            .catch(e => {
+                console.error('Admin item error:', e);
+                showAdminStatus('Network error', true);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+
+    <script type="module" src="{% static 'game/js/main.js' %}?v=16"></script>
+</body>
+</html>

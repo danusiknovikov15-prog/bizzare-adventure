@@ -40,8 +40,12 @@ export const level4 = {
         maxY: 600
     },
 
-    // Boss placement (one boss in the center)
+    // Boss placement (one boss in the center) + Zombie Archers
     enemies: [
-        { x: 540, y: 350, isBoss: true }  // Boss on center platform (y: 500 - 150 = 350)
+        { x: 540, y: 350, isBoss: true },  // Boss on center platform (y: 500 - 150 = 350)
+        { x: 100, y: 390, isZombieArcher: true },  // Zombie archer on left platform
+        { x: 1050, y: 390, isZombieArcher: true },  // Zombie archer on right platform
+        { x: 300, y: 290, isZombieArcher: true },  // Zombie archer on upper left platform
+        { x: 850, y: 290, isZombieArcher: true }   // Zombie archer on upper right platform
     ]
 };

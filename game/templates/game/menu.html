@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platformer Game - Main Menu</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'game/css/menu.css' %}">
+</head>
+<body>
+    <!-- Admin Quick Panel - Top Right (only for staff/superusers) -->
+    {% if user.is_staff or user.is_superuser %}
+    <div id="admin-quick-panel" style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+        <button onclick="toggleAdminDropdown()" style="
+            background: linear-gradient(180deg, #ff0044 0%, #8b0000 100%);
+            border: 2px solid #ff3366;
+            border-radius: 8px;
+            padding: 10px 15px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 0 15px rgba(255, 0, 68, 0.5);
+        ">⚡ Admin</button>
+        <div id="admin-dropdown" style="
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: rgba(20, 20, 30, 0.95);
+            border: 2px solid #ff0044;
+            border-radius: 8px;
+            padding: 10px;
+            min-width: 200px;
+            box-shadow: 0 0 20px rgba(255, 0, 68, 0.3);
+        ">
+            <p style="color: #ff0044; margin: 0 0 10px 0; font-weight: bold; text-align: center;">Give Items</p>
+            <button onclick="adminGiveItem('class_sukuna')" style="width: 100%; margin: 3px 0; padding: 8px; background: linear-gradient(180deg, #4a0a2a 0%, #2a0015 100%); border: 1px solid #ff0044; color: #ff6688; border-radius: 5px; cursor: pointer;">👹 Sukuna (Mythic)</button>
+            <button onclick="adminGiveItem('class_jedi')" style="width: 100%; margin: 3px 0; padding: 8px; background: #1a3a5c; border: 1px solid #7df9ff; color: #7df9ff; border-radius: 5px; cursor: pointer;">⚔️ Jedi</button>
+            <button onclick="adminGiveItem('class_enemy_king')" style="width: 100%; margin: 3px 0; padding: 8px; background: #3a1a1a; border: 1px solid #ff3333; color: #ff6666; border-radius: 5px; cursor: pointer;">👑 Enemy King</button>
+            <button onclick="adminGiveItem('class_chef')" style="width: 100%; margin: 3px 0; padding: 8px; background: #3a3a3a; border: 1px solid #ff6600; color: #ffaa66; border-radius: 5px; cursor: pointer;">👨‍🍳 Chef</button>
+            <button onclick="adminGiveItem('class_skibidi')" style="width: 100%; margin: 3px 0; padding: 8px; background: #2a2a3a; border: 1px solid #87CEEB; color: #87CEEB; border-radius: 5px; cursor: pointer;">🚽 Skibidi</button>
+            <button onclick="adminGiveItem('class_boxer')" style="width: 100%; margin: 3px 0; padding: 8px; background: #3a2020; border: 1px solid #ff4444; color: #ff6666; border-radius: 5px; cursor: pointer;">🥊 Boxer</button>
+            <hr style="border-color: #ff0044; margin: 10px 0;">
+            <button onclick="adminGiveItem('lightsaber')" style="width: 100%; margin: 3px 0; padding: 8px; background: #1a2a3a; border: 1px solid #7df9ff; color: #7df9ff; border-radius: 5px; cursor: pointer;">🔦 Lightsaber</button>
+            <button onclick="adminGiveCoins(10000)" style="width: 100%; margin: 3px 0; padding: 8px; background: #3a3a1a; border: 1px solid #ffd700; color: #ffd700; border-radius: 5px; cursor: pointer;">💰 +10,000 Coins</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Menu Container -->
+    <div id="main-menu" class="menu-container">
+        <h1 class="game-title">PLATFORMER ADVENTURE</h1>
+
+        <!-- Not Logged In View -->
+        <div id="login-screen" class="menu-screen">
+            <button class="menu-button" onclick="showLoginForm()">Login</button>
+            <button class="menu-button" onclick="showRegisterForm()">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="menu-screen hidden">
+            <input type="text" id="login-username" class="menu-input" placeholder="Username" maxlength="30">
+            <input type="password" id="login-password" class="menu-input" placeholder="Password">
+            <div id="login-error" class="error-message"></div>
+            <button class="menu-button" onclick="handleLogin()">Login</button>
+            <button class="menu-button menu-button-secondary" onclick="showLoginScreen()">Back</button>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-form" class="menu-screen hidden">
+            <input type="text" id="register-username" class="menu-input" placeholder="Username" maxlength="30">
+            <input type="password" id="register-password" class="menu-input" placeholder="Password">
+            <input type="password" id="register-confirm" class="menu-input" placeholder="Confirm Password">
+            <div id="register-error" class="error-message"></div>
+            <button class="menu-button" onclick="handleRegister()">Register</button>
+            <button class="menu-button menu-button-secondary" onclick="showLoginScreen()">Back</button>
+        </div>
+
+        <!-- Logged In View -->
+        <div id="player-menu" class="menu-screen {% if not user.is_authenticated %}hidden{% endif %}">
+            <div class="player-info">
+                <p class="player-name">Welcome, <span id="player-username">{{ user.username }}</span>!</p>
+                {% if profile %}
+                <p class="player-stats">Level: {{ profile.current_level }} | Kills: {{ profile.total_kills }} | Deaths: {{ profile.total_deaths }}</p>
+                {% endif %}
+            </div>
+
+            <button class="menu-button" onclick="startGame()">{% if profile and profile.current_level > 1 %}Continue Game{% else %}New Game{% endif %}</button>
+            <button class="menu-button menu-button-multiplayer" onclick="openMultiplayer()">Multiplayer</button>
+            <button class="menu-button menu-button-shop" onclick="showShop()">Shop</button>
+            <button class="menu-button menu-button-classes" onclick="showClasses()">Classes</button>
+            <button class="menu-button menu-button-titles" onclick="showTitles()">Titles</button>
+            <button class="menu-button" onclick="showStats()">Statistics</button>
+            <button class="menu-button" onclick="showSettings()">Settings</button>
+            {% if user.is_staff %}
+            <button class="menu-button menu-button-admin" onclick="openAdminPanel()">Admin Panel</button>
+            {% endif %}
+            <button class="menu-button menu-button-exit" onclick="handleLogout()">Logout</button>
+        </div>
+
+        <!-- Statistics Screen -->
+        <div id="stats-screen" class="menu-screen hidden">
+            <h2 class="menu-subtitle">Player Statistics</h2>
+            <div class="stats-container">
+                <div class="stat-row">
+                    <span class="stat-label">Current Level:</span>
+                    <span class="stat-value" id="stat-level">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Max Level Reached:</span>
+                    <span class="stat-value" id="stat-max-level">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Kills:</span>
+                    <span class="stat-value" id="stat-kills">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Deaths:</span>
+                    <span class="stat-value" id="stat-deaths">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Boss Kills:</span>
+                    <span class="stat-value" id="stat-boss-kills">-</span>
+                </div>
+            </div>
+            <button class="menu-button menu-button-secondary" onclick="showPlayerMenu()">Back</button>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="menu-screen hidden">
+            <h2 class="menu-subtitle">Settings</h2>
+            <div class="settings-container">
+                <p class="setting-note">Settings coming soon!</p>
+            </div>
+            <button class="menu-button menu-button-secondary" onclick="showPlayerMenu()">Back</button>
+        </div>
+
+        <!-- Classes Screen -->
+        <div id="classes-screen" class="menu-screen hidden">
+            <h2 class="menu-subtitle">Classes</h2>
+            <div class="classes-container" id="classes-list">
+                <!-- Classes loaded dynamically -->
+            </div>
+            <button class="menu-button menu-button-secondary" onclick="showPlayerMenu()">Back</button>
+        </div>
+
+        <!-- Titles Screen -->
+        <div id="titles-screen" class="menu-screen hidden">
+            <h2 class="menu-subtitle">Your Titles</h2>
+            <p id="current-title-display" style="color: #aaa; margin-bottom: 15px;">Current title: <span id="equipped-title-name">None</span></p>
+            <div class="titles-container" id="titles-list" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; max-width: 800px; margin: 0 auto 20px auto;">
+                <!-- Titles loaded dynamically -->
+            </div>
+            <button class="menu-button menu-button-secondary" onclick="showPlayerMenu()">Back</button>
+        </div>
+
+        <!-- Shop Screen - Brawl Stars Style -->
+        <div id="shop-screen" class="brawl-shop hidden">
+            <div class="brawl-shop-header">
+                <button class="brawl-close-btn" onclick="showPlayerMenu()">
+                    <span>&times;</span>
+                </button>
+                <h2 class="brawl-shop-title">SHOP</h2>
+                <div class="brawl-coins">
+                    <div class="coin-display">
+                        <span class="coin-icon-brawl">&#128176;</span>
+                        <span id="player-coins">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="brawl-shop-content">
+                <div class="brawl-carousel" id="shop-carousel">
+                    <!-- Items loaded dynamically -->
+                </div>
+                <div class="brawl-carousel-dots" id="carousel-dots">
+                    <!-- Dots loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        // Screen navigation
+        function hideAllScreens() {
+            document.querySelectorAll('.menu-screen').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+        }
+
+        function showLoginScreen() {
+            hideAllScreens();
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-error').textContent = '';
+            document.getElementById('register-error').textContent = '';
+        }
+
+        function showLoginForm() {
+            hideAllScreens();
+            document.getElementById('login-form').classList.remove('hidden');
+        }
+
+        function showRegisterForm() {
+            hideAllScreens();
+            document.getElementById('register-form').classList.remove('hidden');
+        }
+
+        function showPlayerMenu() {
+            hideAllScreens();
+            // Also hide the shop screen (it has different class)
+            document.getElementById('shop-screen').classList.add('hidden');
+            document.getElementById('player-menu').classList.remove('hidden');
+        }
+
+        function showStats() {
+            hideAllScreens();
+            loadStats();
+            document.getElementById('stats-screen').classList.remove('hidden');
+        }
+
+        function showSettings() {
+            hideAllScreens();
+            document.getElementById('settings-screen').classList.remove('hidden');
+        }
+
+        let equippedClass = null;
+
+        async function showClasses() {
+            hideAllScreens();
+            document.getElementById('classes-screen').classList.remove('hidden');
+            await loadShopData();
+            await loadEquippedClass();
+            renderClasses();
+        }
+
+        async function loadEquippedClass() {
+            try {
+                const response = await fetch('/api/class/equipped/');
+                const data = await response.json();
+                if (data.success) {
+                    equippedClass = data.equipped_class;
+                }
+            } catch (error) {
+                console.error('Failed to load equipped class:', error);
+            }
+        }
+
+        function renderClasses() {
+            const container = document.getElementById('classes-list');
+            const ownedClasses = purchasedItems.filter(id => id.startsWith('class_'));
+
+            // Available classes (owned)
+            const classesData = [
+                { id: 'class_sukuna', name: 'Sukuna', icon: sukunaSvg, description: 'King of Curses! +50% damage, Cleave attack' },
+                { id: 'class_jedi', name: 'Jedi', icon: jediSvg, description: 'Includes Lightsaber!' },
+                { id: 'class_enemy_king', name: 'Enemy King', icon: enemyKingSvg, description: 'Command the darkness! +20% damage' },
+                { id: 'class_chef', name: 'Chef', icon: chefSvg, description: 'Frying pan weapon! +15% attack speed' },
+                { id: 'class_skibidi', name: 'Skibidi', icon: skibidiSvg, description: 'Toilet power! +30% jump, +25% speed' },
+                { id: 'class_boxer', name: 'Boxer', icon: boxerSvg, description: 'Knockout punches! +25% attack damage' }
+            ];
+
+            let html = '';
+            classesData.forEach(cls => {
+                const owned = ownedClasses.includes(cls.id);
+                const isEquipped = equippedClass === cls.id;
+                if (owned) {
+                    html += `
+                        <div class="class-item ${owned ? 'owned' : 'locked'} ${isEquipped ? 'equipped' : ''}">
+                            <div class="class-icon">${cls.icon}</div>
+                            <div class="class-info">
+                                <div class="class-name">${cls.name}</div>
+                                <div class="class-desc">${cls.description}</div>
+                            </div>
+                            ${isEquipped ?
+                                `<button class="equip-btn equipped-badge-btn" onclick="unequipClass()">Equipped</button>` :
+                                `<button class="equip-btn" onclick="equipClass('${cls.id}')">Equip</button>`
+                            }
+                        </div>
+                    `;
+                }
+            });
+
+            if (html === '') {
+                html = '<p class="no-classes">No classes owned yet. Buy classes in the Shop!</p>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function equipClass(classId) {
+            try {
+                const response = await fetch('/api/class/equip/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ class_id: classId }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    equippedClass = data.equipped_class;
+                    renderClasses();
+                    showPurchasePopup();
+                } else {
+                    showErrorPopup(data.error || 'Failed to equip class');
+                }
+            } catch (error) {
+                showErrorPopup('Network error');
+            }
+        }
+
+        async function unequipClass() {
+            try {
+                const response = await fetch('/api/class/equip/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ class_id: '' }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    equippedClass = null;
+                    renderClasses();
+                }
+            } catch (error) {
+                showErrorPopup('Network error');
+            }
+        }
+
+        // Titles functionality
+        let equippedTitle = null;
+
+        const titlesData = [
+            { id: 'title_warrior', name: 'Warrior', icon: '⚔️', description: 'Battle-hardened fighter' },
+            { id: 'title_legend', name: 'Legend', icon: '⭐', description: 'A living legend' },
+            { id: 'title_champion', name: 'Champion', icon: '🏆', description: 'Undefeated champion' },
+            { id: 'title_godslayer', name: 'Godslayer', icon: '💀', description: 'Slayer of gods' },
+            { id: 'title_shadow', name: 'Shadow', icon: '🌑', description: 'One with darkness' },
+            { id: 'title_phoenix', name: 'Phoenix', icon: '🔥', description: 'Reborn from ashes' },
+            { id: 'title_frost', name: 'Frost', icon: '❄️', description: 'Cold as ice' },
+            { id: 'title_thunder', name: 'Thunder', icon: '⚡', description: 'Strike like lightning' }
+        ];
+
+        async function showTitles() {
+            hideAllScreens();
+            document.getElementById('titles-screen').classList.remove('hidden');
+            await loadShopData();
+            await loadEquippedTitle();
+            renderTitles();
+        }
+
+        async function loadEquippedTitle() {
+            try {
+                const response = await fetch('/api/title/equipped/');
+                const data = await response.json();
+                if (data.success) {
+                    equippedTitle = data.equipped_title;
+                    updateTitleDisplay();
+                }
+            } catch (error) {
+                console.error('Failed to load equipped title:', error);
+            }
+        }
+
+        function updateTitleDisplay() {
+            const titleNameSpan = document.getElementById('equipped-title-name');
+            if (equippedTitle) {
+                const titleInfo = titlesData.find(t => t.id === equippedTitle);
+                titleNameSpan.textContent = titleInfo ? `${titleInfo.icon} ${titleInfo.name}` : 'None';
+                titleNameSpan.style.color = '#ffd700';
+            } else {
+                titleNameSpan.textContent = 'None';
+                titleNameSpan.style.color = '#aaa';
+            }
+        }
+
+        function renderTitles() {
+            const container = document.getElementById('titles-list');
+            const ownedTitles = purchasedItems.filter(id => id.startsWith('title_'));
+
+            let html = '';
+            titlesData.forEach(title => {
+                const owned = ownedTitles.includes(title.id);
+                const isEquipped = equippedTitle === title.id;
+                if (owned) {
+                    html += `
+                        <div class="title-item ${isEquipped ? 'equipped' : ''}" style="
+                            background: linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%);
+                            border: 2px solid ${isEquipped ? '#ffd700' : '#444'};
+                            border-radius: 10px;
+                            padding: 15px;
+                            text-align: center;
+                            width: 140px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        " onclick="${isEquipped ? 'unequipTitle()' : `equipTitle('${title.id}')`}">
+                            <div style="font-size: 40px; margin-bottom: 8px;">${title.icon}</div>
+                            <div style="color: #fff; font-weight: bold; font-size: 14px;">${title.name}</div>
+                            <div style="color: #888; font-size: 11px; margin-top: 4px;">${title.description}</div>
+                            ${isEquipped ? '<div style="color: #ffd700; font-size: 11px; margin-top: 8px;">✓ Equipped</div>' : ''}
+                        </div>
+                    `;
+                }
+            });
+
+            if (html === '') {
+                html = '<p style="color: #aaa;">No titles owned yet. Buy titles in the Shop!</p>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function equipTitle(titleId) {
+            try {
+                const response = await fetch('/api/title/equip/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ title_id: titleId }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    equippedTitle = data.equipped_title;
+                    updateTitleDisplay();
+                    renderTitles();
+                } else {
+                    showErrorPopup(data.error || 'Failed to equip title');
+                }
+            } catch (error) {
+                showErrorPopup('Network error');
+            }
+        }
+
+        async function unequipTitle() {
+            try {
+                const response = await fetch('/api/title/equip/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ title_id: '' }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    equippedTitle = null;
+                    updateTitleDisplay();
+                    renderTitles();
+                }
+            } catch (error) {
+                showErrorPopup('Network error');
+            }
+        }
+
+        // Authentication handlers
+        async function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            if (!username || !password) {
+                errorDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('player-username').textContent = username;
+                    showPlayerMenu();
+                    errorDiv.textContent = '';
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please try again.';
+            }
+        }
+
+        async function handleRegister() {
+            const username = document.getElementById('register-username').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+            const errorDiv = document.getElementById('register-error');
+
+            if (!username || !password || !confirm) {
+                errorDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            if (password !== confirm) {
+                errorDiv.textContent = 'Passwords do not match';
+                return;
+            }
+
+            if (password.length < 4) {
+                errorDiv.textContent = 'Password must be at least 4 characters';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('player-username').textContent = username;
+                    showPlayerMenu();
+                    errorDiv.textContent = '';
+                } else {
+                    errorDiv.textContent = data.error || 'Registration failed';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please try again.';
+            }
+        }
+
+        function handleLogout() {
+            window.location.href = '/logout/';
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/load/');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('stat-level').textContent = data.current_level;
+                    document.getElementById('stat-max-level').textContent = data.max_level_reached;
+                    document.getElementById('stat-kills').textContent = data.total_kills;
+                    document.getElementById('stat-deaths').textContent = data.total_deaths;
+                    document.getElementById('stat-boss-kills').textContent = data.total_boss_kills;
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Start game
+        function startGame() {
+            window.location.href = '/game/';
+        }
+
+        // Open multiplayer menu
+        function openMultiplayer() {
+            window.location.href = '/multiplayer/';
+        }
+
+        // Open admin panel
+        function openAdminPanel() {
+            window.location.href = '/admin/';
+        }
+
+        // Admin Quick Panel Functions
+        function toggleAdminDropdown() {
+            const dropdown = document.getElementById('admin-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function adminGiveItem(itemId) {
+            try {
+                const response = await fetch('/api/shop/buy/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        item_id: itemId,
+                        price: 0,
+                        admin_give: true  // Flag for free admin give
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(`✅ Item "${itemId}" given successfully!`);
+                    // Refresh purchased items
+                    loadPurchasedItems();
+                } else {
+                    alert(`❌ Failed: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Admin give error:', error);
+                alert('❌ Error giving item');
+            }
+        }
+
+        async function adminGiveCoins(amount) {
+            try {
+                const response = await fetch('/api/shop/add-coins/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ amount: amount })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(`✅ +${amount} coins added! New balance: ${data.new_balance}`);
+                    document.getElementById('player-coins').textContent = data.new_balance;
+                } else {
+                    alert(`❌ Failed: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Admin coins error:', error);
+                alert('❌ Error adding coins');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('admin-quick-panel');
+            const dropdown = document.getElementById('admin-dropdown');
+            if (panel && dropdown && !panel.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Shop functionality - Brawl Stars Style Carousel
+        let purchasedItems = [];
+        let currentSlide = 0;
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        // Shop items - only icons
+        const jediSvg = `<svg viewBox="0 0 100 100" width="100" height="100">
+            <!-- Hooded robe -->
+            <ellipse cx="50" cy="85" rx="25" ry="15" fill="#4a3728"/>
+            <path d="M30 45 Q50 20 70 45 L75 85 Q50 95 25 85 Z" fill="#5c4333"/>
+            <!-- Hood -->
+            <ellipse cx="50" cy="35" rx="22" ry="18" fill="#4a3728"/>
+            <ellipse cx="50" cy="38" rx="15" ry="12" fill="#2a1a0a"/>
+            <!-- Face shadow -->
+            <ellipse cx="50" cy="40" rx="12" ry="10" fill="#1a0a00"/>
+            <!-- Glowing eyes -->
+            <ellipse cx="45" cy="38" rx="2" ry="1.5" fill="#7df9ff">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="55" cy="38" rx="2" ry="1.5" fill="#7df9ff">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+            </ellipse>
+            <!-- Lightsaber handle -->
+            <rect x="72" y="35" width="5" height="18" rx="1" fill="#888"/>
+            <rect x="73" y="50" width="3" height="4" fill="#333"/>
+            <!-- Lightsaber blade with glow -->
+            <defs>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                    <feMerge>
+                        <feMergeNode in="blur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <rect x="73" y="5" width="3" height="30" rx="1" fill="#7df9ff" filter="url(#glow)">
+                <animate attributeName="opacity" values="0.8;1;0.8" dur="0.5s" repeatCount="indefinite"/>
+            </rect>
+            <rect x="74" y="5" width="1" height="30" fill="#fff"/>
+            <!-- Hand holding saber -->
+            <ellipse cx="74" cy="55" rx="4" ry="3" fill="#d4a574"/>
+        </svg>`;
+
+        // Enemy King class SVG
+        const enemyKingSvg = `<svg viewBox="0 0 100 100" width="100" height="100">
+            <!-- Dark cape -->
+            <path d="M25 40 Q50 25 75 40 L80 90 Q50 100 20 90 Z" fill="#1a0a1a"/>
+            <path d="M28 42 Q50 30 72 42 L76 88 Q50 96 24 88 Z" fill="#2d1a2d"/>
+            <!-- Body armor (dark red) -->
+            <path d="M35 50 L65 50 L68 80 L32 80 Z" fill="#4a1a1a"/>
+            <path d="M38 52 L62 52 L64 78 L36 78 Z" fill="#5c2a2a"/>
+            <!-- Skull pattern on chest -->
+            <ellipse cx="50" cy="62" rx="8" ry="10" fill="#1a0a0a"/>
+            <circle cx="46" cy="60" r="2" fill="#ff3333"/>
+            <circle cx="54" cy="60" r="2" fill="#ff3333"/>
+            <path d="M46 66 Q50 70 54 66" stroke="#ff3333" fill="none" stroke-width="1.5"/>
+            <!-- Evil crown -->
+            <path d="M32 25 L35 35 L42 28 L50 38 L58 28 L65 35 L68 25 L70 38 L30 38 Z" fill="#8b0000"/>
+            <path d="M34 27 L36 34 L43 29 L50 36 L57 29 L64 34 L66 27" fill="#a00000"/>
+            <!-- Crown gems -->
+            <circle cx="50" cy="30" r="3" fill="#ff0000">
+                <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="40" cy="32" r="2" fill="#ff4444"/>
+            <circle cx="60" cy="32" r="2" fill="#ff4444"/>
+            <!-- Face (shadowed) -->
+            <ellipse cx="50" cy="42" rx="12" ry="8" fill="#3a2020"/>
+            <!-- Glowing red eyes -->
+            <ellipse cx="45" cy="41" rx="2.5" ry="2" fill="#ff0000">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="55" cy="41" rx="2.5" ry="2" fill="#ff0000">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite"/>
+            </ellipse>
+            <!-- Evil sword -->
+            <rect x="75" y="30" width="4" height="40" fill="#2a2a2a"/>
+            <rect x="73" y="68" width="8" height="4" fill="#4a4a4a"/>
+            <rect x="75" y="72" width="4" height="8" rx="1" fill="#5c2a2a"/>
+            <!-- Sword glow -->
+            <rect x="76" y="32" width="2" height="36" fill="#ff3333" opacity="0.6">
+                <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
+            </rect>
+        </svg>`;
+
+        // Chef class SVG
+        const chefSvg = `<svg viewBox="0 0 100 100" width="100" height="100">
+            <!-- Chef hat -->
+            <ellipse cx="50" cy="25" rx="22" ry="15" fill="#ffffff"/>
+            <ellipse cx="38" cy="18" rx="10" ry="10" fill="#ffffff"/>
+            <ellipse cx="50" cy="15" rx="10" ry="10" fill="#ffffff"/>
+            <ellipse cx="62" cy="18" rx="10" ry="10" fill="#ffffff"/>
+            <rect x="30" y="25" width="40" height="12" fill="#ffffff"/>
+            <!-- Hat band -->
+            <rect x="30" y="35" width="40" height="4" fill="#2a2a2a"/>
+            <!-- Face -->
+            <ellipse cx="50" cy="48" rx="15" ry="12" fill="#f5d0a9"/>
+            <!-- Eyes -->
+            <ellipse cx="44" cy="46" rx="2.5" ry="2" fill="#2a2a2a"/>
+            <ellipse cx="56" cy="46" rx="2.5" ry="2" fill="#2a2a2a"/>
+            <!-- Mustache -->
+            <path d="M42 54 Q50 58 58 54 Q55 56 50 56 Q45 56 42 54" fill="#4a3020"/>
+            <!-- Smile -->
+            <path d="M44 52 Q50 56 56 52" stroke="#a06040" fill="none" stroke-width="1.5"/>
+            <!-- Chef coat -->
+            <path d="M30 60 L70 60 L75 95 L25 95 Z" fill="#ffffff"/>
+            <line x1="50" y1="62" x2="50" y2="90" stroke="#e0e0e0" stroke-width="1"/>
+            <!-- Buttons -->
+            <circle cx="50" cy="68" r="2" fill="#2a2a2a"/>
+            <circle cx="50" cy="78" r="2" fill="#2a2a2a"/>
+            <circle cx="50" cy="88" r="2" fill="#2a2a2a"/>
+            <!-- Frying pan -->
+            <ellipse cx="80" cy="60" rx="12" ry="4" fill="#4a4a4a"/>
+            <ellipse cx="80" cy="58" rx="10" ry="3" fill="#3a3a3a"/>
+            <rect x="88" y="58" width="10" height="3" fill="#5c4030"/>
+            <!-- Fire/steam from pan -->
+            <path d="M76 52 Q78 48 76 44" stroke="#ff6600" fill="none" stroke-width="2" opacity="0.8">
+                <animate attributeName="d" values="M76 52 Q78 48 76 44;M76 52 Q74 48 76 44;M76 52 Q78 48 76 44" dur="0.5s" repeatCount="indefinite"/>
+            </path>
+            <path d="M80 50 Q82 46 80 42" stroke="#ff8800" fill="none" stroke-width="2" opacity="0.8">
+                <animate attributeName="d" values="M80 50 Q82 46 80 42;M80 50 Q78 46 80 42;M80 50 Q82 46 80 42" dur="0.4s" repeatCount="indefinite"/>
+            </path>
+            <path d="M84 52 Q86 48 84 44" stroke="#ff6600" fill="none" stroke-width="2" opacity="0.8">
+                <animate attributeName="d" values="M84 52 Q86 48 84 44;M84 52 Q82 48 84 44;M84 52 Q86 48 84 44" dur="0.6s" repeatCount="indefinite"/>
+            </path>
+        </svg>`;
+
+        // Title SVG Icons
+        const titleWarriorSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><linearGradient id="swordGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#c0c0c0"/><stop offset="100%" style="stop-color:#808080"/></linearGradient></defs>
+            <rect x="45" y="10" width="10" height="50" fill="url(#swordGrad)"/>
+            <polygon points="50,5 42,15 58,15" fill="#a0a0a0"/>
+            <rect x="35" y="55" width="30" height="8" rx="2" fill="#8B4513"/>
+            <rect x="47" y="63" width="6" height="15" fill="#654321"/>
+            <rect x="55" y="10" width="10" height="50" fill="url(#swordGrad)" transform="rotate(45 60 35)"/>
+            <polygon points="60,5 52,15 68,15" fill="#a0a0a0" transform="rotate(45 60 10)"/>
+        </svg>`;
+
+        const titleLegendSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FFD700"/><stop offset="100%" style="stop-color:#FFA500"/></linearGradient></defs>
+            <polygon points="50,10 61,40 95,40 67,60 78,90 50,72 22,90 33,60 5,40 39,40" fill="url(#starGrad)">
+                <animate attributeName="opacity" values="0.8;1;0.8" dur="1.5s" repeatCount="indefinite"/>
+            </polygon>
+            <polygon points="50,20 57,38 77,38 61,50 67,70 50,58 33,70 39,50 23,38 43,38" fill="#FFFF00"/>
+        </svg>`;
+
+        const titleChampionSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><linearGradient id="trophyGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FFD700"/><stop offset="100%" style="stop-color:#B8860B"/></linearGradient></defs>
+            <ellipse cx="50" cy="25" rx="25" ry="20" fill="url(#trophyGrad)"/>
+            <ellipse cx="50" cy="25" rx="18" ry="14" fill="#DAA520"/>
+            <rect x="40" y="40" width="20" height="25" fill="url(#trophyGrad)"/>
+            <ellipse cx="50" cy="70" rx="20" ry="6" fill="#B8860B"/>
+            <rect x="30" y="70" width="40" height="8" fill="#8B7355"/>
+            <path d="M25 20 Q15 25 20 40 L30 35" fill="url(#trophyGrad)"/>
+            <path d="M75 20 Q85 25 80 40 L70 35" fill="url(#trophyGrad)"/>
+            <text x="50" y="30" font-size="14" fill="#B8860B" text-anchor="middle" font-weight="bold">1</text>
+        </svg>`;
+
+        const titleGodslayerSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><filter id="glowRed"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <ellipse cx="50" cy="40" rx="22" ry="28" fill="#1a1a1a"/>
+            <ellipse cx="50" cy="38" rx="18" ry="22" fill="#2a2a2a"/>
+            <ellipse cx="42" cy="32" rx="5" ry="7" fill="#000"/>
+            <ellipse cx="58" cy="32" rx="5" ry="7" fill="#000"/>
+            <circle cx="42" cy="32" r="2" fill="#ff0000" filter="url(#glowRed)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite"/></circle>
+            <circle cx="58" cy="32" r="2" fill="#ff0000" filter="url(#glowRed)"><animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite"/></circle>
+            <ellipse cx="50" cy="50" rx="8" ry="4" fill="#1a1a1a"/>
+            <path d="M38 55 Q50 65 62 55" stroke="#1a1a1a" stroke-width="3" fill="none"/>
+            <rect x="35" y="58" width="4" height="8" fill="#f5f5f5"/>
+            <rect x="61" y="58" width="4" height="8" fill="#f5f5f5"/>
+        </svg>`;
+
+        const titleShadowSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color:#4a4a6a"/><stop offset="100%" style="stop-color:#1a1a2a"/></radialGradient></defs>
+            <circle cx="50" cy="50" r="40" fill="url(#shadowGrad)">
+                <animate attributeName="r" values="38;42;38" dur="2s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="50" cy="50" r="30" fill="#0a0a1a"/>
+            <ellipse cx="42" cy="45" rx="4" ry="6" fill="#6a6a9a"/>
+            <ellipse cx="58" cy="45" rx="4" ry="6" fill="#6a6a9a"/>
+            <path d="M40 60 Q50 55 60 60" stroke="#4a4a6a" stroke-width="2" fill="none"/>
+        </svg>`;
+
+        const titlePhoenixSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><linearGradient id="fireGrad" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" style="stop-color:#ff0000"/><stop offset="50%" style="stop-color:#ff6600"/><stop offset="100%" style="stop-color:#ffff00"/></linearGradient></defs>
+            <ellipse cx="50" cy="55" rx="18" ry="25" fill="#ff4400"/>
+            <ellipse cx="50" cy="55" rx="12" ry="18" fill="#ff6600"/>
+            <path d="M50 20 Q40 35 45 50 Q50 40 55 50 Q60 35 50 20" fill="url(#fireGrad)"><animate attributeName="d" values="M50 20 Q40 35 45 50 Q50 40 55 50 Q60 35 50 20;M50 15 Q38 35 45 50 Q50 38 55 50 Q62 35 50 15;M50 20 Q40 35 45 50 Q50 40 55 50 Q60 35 50 20" dur="0.5s" repeatCount="indefinite"/></path>
+            <path d="M30 40 Q20 50 25 65 L40 55" fill="#ff6600"/>
+            <path d="M70 40 Q80 50 75 65 L60 55" fill="#ff6600"/>
+            <circle cx="44" cy="50" r="3" fill="#ffff00"/>
+            <circle cx="56" cy="50" r="3" fill="#ffff00"/>
+            <path d="M47 60 L50 65 L53 60" fill="#ff8800"/>
+        </svg>`;
+
+        const titleFrostSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><linearGradient id="iceGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#e0ffff"/><stop offset="100%" style="stop-color:#87ceeb"/></linearGradient></defs>
+            <line x1="50" y1="10" x2="50" y2="90" stroke="url(#iceGrad)" stroke-width="4"/>
+            <line x1="10" y1="50" x2="90" y2="50" stroke="url(#iceGrad)" stroke-width="4"/>
+            <line x1="22" y1="22" x2="78" y2="78" stroke="url(#iceGrad)" stroke-width="3"/>
+            <line x1="78" y1="22" x2="22" y2="78" stroke="url(#iceGrad)" stroke-width="3"/>
+            <circle cx="50" cy="50" r="8" fill="#ffffff"/>
+            <circle cx="50" cy="20" r="4" fill="#b0e0e6"/>
+            <circle cx="50" cy="80" r="4" fill="#b0e0e6"/>
+            <circle cx="20" cy="50" r="4" fill="#b0e0e6"/>
+            <circle cx="80" cy="50" r="4" fill="#b0e0e6"/>
+            <polygon points="50,10 47,18 53,18" fill="#e0ffff"/>
+            <polygon points="50,90 47,82 53,82" fill="#e0ffff"/>
+        </svg>`;
+
+        const titleThunderSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs><linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ffff00"/><stop offset="100%" style="stop-color:#ffa500"/></linearGradient><filter id="glowYellow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <polygon points="55,5 25,45 45,45 35,95 75,40 52,40 65,5" fill="url(#boltGrad)" filter="url(#glowYellow)">
+                <animate attributeName="opacity" values="0.8;1;0.8" dur="0.3s" repeatCount="indefinite"/>
+            </polygon>
+            <polygon points="52,15 32,45 47,45 40,80 67,45 52,45 60,15" fill="#ffff66"/>
+        </svg>`;
+
+        // Boxer SVG - Fighter with boxing gloves
+        const boxerSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs>
+                <linearGradient id="gloveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff4444"/>
+                    <stop offset="100%" style="stop-color:#cc0000"/>
+                </linearGradient>
+                <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#e8c4a0"/>
+                    <stop offset="100%" style="stop-color:#d4a574"/>
+                </linearGradient>
+            </defs>
+            <!-- Head -->
+            <ellipse cx="50" cy="35" rx="20" ry="22" fill="url(#skinGrad)"/>
+            <!-- Hair -->
+            <ellipse cx="50" cy="20" rx="18" ry="10" fill="#2a2a2a"/>
+            <!-- Eyes -->
+            <ellipse cx="43" cy="33" rx="4" ry="3" fill="#1a1a1a"/>
+            <ellipse cx="57" cy="33" rx="4" ry="3" fill="#1a1a1a"/>
+            <circle cx="44" cy="32" r="1.5" fill="#ffffff"/>
+            <circle cx="58" cy="32" r="1.5" fill="#ffffff"/>
+            <!-- Determined expression -->
+            <path d="M43 42 L57 42" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+            <!-- Body - tank top -->
+            <rect x="35" y="55" width="30" height="25" rx="3" fill="#ffffff" stroke="#cccccc"/>
+            <!-- Left boxing glove -->
+            <ellipse cx="22" cy="60" rx="14" ry="12" fill="url(#gloveGrad)" stroke="#990000" stroke-width="1"/>
+            <rect x="28" y="52" width="8" height="16" fill="url(#skinGrad)"/>
+            <!-- Right boxing glove -->
+            <ellipse cx="78" cy="55" rx="14" ry="12" fill="url(#gloveGrad)" stroke="#990000" stroke-width="1"/>
+            <rect x="64" y="47" width="8" height="16" fill="url(#skinGrad)"/>
+            <!-- Glove laces -->
+            <line x1="18" y1="56" x2="26" y2="56" stroke="#ffffff" stroke-width="1"/>
+            <line x1="18" y1="60" x2="26" y2="60" stroke="#ffffff" stroke-width="1"/>
+            <line x1="18" y1="64" x2="26" y2="64" stroke="#ffffff" stroke-width="1"/>
+            <line x1="74" y1="51" x2="82" y2="51" stroke="#ffffff" stroke-width="1"/>
+            <line x1="74" y1="55" x2="82" y2="55" stroke="#ffffff" stroke-width="1"/>
+            <line x1="74" y1="59" x2="82" y2="59" stroke="#ffffff" stroke-width="1"/>
+        </svg>`;
+
+        // Skibidi Toilet SVG
+        const skibidiSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs>
+                <linearGradient id="toiletGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffffff"/>
+                    <stop offset="100%" style="stop-color:#e0e0e0"/>
+                </linearGradient>
+            </defs>
+            <!-- Tank -->
+            <rect x="30" y="15" width="40" height="25" rx="3" fill="url(#toiletGrad)" stroke="#c0c0c0" stroke-width="1"/>
+            <!-- Tank lid -->
+            <rect x="28" y="10" width="44" height="8" rx="2" fill="#f0f0f0" stroke="#c0c0c0" stroke-width="1"/>
+            <!-- Flush button -->
+            <circle cx="50" cy="22" r="4" fill="#c0c0c0"/>
+            <!-- Bowl -->
+            <ellipse cx="50" cy="60" rx="28" ry="22" fill="url(#toiletGrad)" stroke="#c0c0c0" stroke-width="1"/>
+            <!-- Inner bowl -->
+            <ellipse cx="50" cy="58" rx="20" ry="15" fill="#87CEEB"/>
+            <!-- Face - eyes -->
+            <ellipse cx="40" cy="55" rx="5" ry="4" fill="#1a1a1a"/>
+            <ellipse cx="60" cy="55" rx="5" ry="4" fill="#1a1a1a"/>
+            <circle cx="41" cy="54" r="2" fill="#ffffff"/>
+            <circle cx="61" cy="54" r="2" fill="#ffffff"/>
+            <!-- Mouth -->
+            <path d="M42 65 Q50 72 58 65" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+        </svg>`;
+
+        // Sukuna SVG - King of Curses with 4 eyes and tattoos
+        const sukunaSvg = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <defs>
+                <linearGradient id="sukunaSkin" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#f5d0c5"/>
+                    <stop offset="100%" style="stop-color:#e8b4a8"/>
+                </linearGradient>
+                <filter id="sukunaGlow">
+                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+            <!-- Head -->
+            <ellipse cx="50" cy="45" rx="28" ry="32" fill="url(#sukunaSkin)"/>
+            <!-- Tattoo lines on face -->
+            <line x1="25" y1="35" x2="35" y2="35" stroke="#1a1a1a" stroke-width="2"/>
+            <line x1="65" y1="35" x2="75" y2="35" stroke="#1a1a1a" stroke-width="2"/>
+            <line x1="25" y1="55" x2="35" y2="55" stroke="#1a1a1a" stroke-width="2"/>
+            <line x1="65" y1="55" x2="75" y2="55" stroke="#1a1a1a" stroke-width="2"/>
+            <line x1="50" y1="20" x2="50" y2="30" stroke="#1a1a1a" stroke-width="2"/>
+            <line x1="45" y1="65" x2="55" y2="65" stroke="#1a1a1a" stroke-width="2"/>
+            <!-- Upper eyes -->
+            <ellipse cx="38" cy="35" rx="6" ry="4" fill="#1a1a1a"/>
+            <ellipse cx="62" cy="35" rx="6" ry="4" fill="#1a1a1a"/>
+            <circle cx="38" cy="35" r="2" fill="#ff0044" filter="url(#sukunaGlow)">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="62" cy="35" r="2" fill="#ff0044" filter="url(#sukunaGlow)">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <!-- Lower eyes -->
+            <ellipse cx="38" cy="48" rx="5" ry="3" fill="#1a1a1a"/>
+            <ellipse cx="62" cy="48" rx="5" ry="3" fill="#1a1a1a"/>
+            <circle cx="38" cy="48" r="1.5" fill="#ff0044" filter="url(#sukunaGlow)">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="62" cy="48" r="1.5" fill="#ff0044" filter="url(#sukunaGlow)">
+                <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <!-- Smirk -->
+            <path d="M40 60 Q50 68 60 60" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+            <!-- Hair spikes -->
+            <path d="M30 20 L35 10 L40 18" fill="#ff99aa"/>
+            <path d="M45 15 L50 5 L55 15" fill="#ff99aa"/>
+            <path d="M60 18 L65 10 L70 20" fill="#ff99aa"/>
+        </svg>`;
+
+        const shopItems = [
+            // Classes
+            { id: 'class_sukuna', icon: sukunaSvg, rarity: 'mythic', name: 'Sukuna', price: 22000, isClass: true, subtitle: 'King of Curses!' },
+            { id: 'class_jedi', icon: jediSvg, rarity: 'legendary', name: 'Jedi', price: 7000, isClass: true, subtitle: 'Includes Lightsaber!' },
+            { id: 'class_enemy_king', icon: enemyKingSvg, rarity: 'legendary', name: 'Enemy King', price: 10000, isClass: true, subtitle: 'Command the darkness!' },
+            { id: 'class_chef', icon: chefSvg, rarity: 'epic', name: 'Chef', price: 5000, isClass: true, subtitle: 'Cooking up damage!' },
+            { id: 'class_boxer', icon: boxerSvg, rarity: 'rare', name: 'Boxer', price: 2000, isClass: true, subtitle: 'Knockout punches!' },
+            // Titles
+            { id: 'title_warrior', icon: titleWarriorSvg, rarity: 'common', name: 'Warrior', price: 500, isTitle: true, subtitle: 'Battle-hardened fighter' },
+            { id: 'title_legend', icon: titleLegendSvg, rarity: 'rare', name: 'Legend', price: 1500, isTitle: true, subtitle: 'A name to remember' },
+            { id: 'title_champion', icon: titleChampionSvg, rarity: 'epic', name: 'Champion', price: 3000, isTitle: true, subtitle: 'Undefeated glory' },
+            { id: 'title_godslayer', icon: titleGodslayerSvg, rarity: 'legendary', name: 'Godslayer', price: 8000, isTitle: true, subtitle: 'Fear the name!' },
+            { id: 'title_shadow', icon: titleShadowSvg, rarity: 'epic', name: 'Shadow', price: 2500, isTitle: true, subtitle: 'Silent and deadly' },
+            { id: 'title_phoenix', icon: titlePhoenixSvg, rarity: 'legendary', name: 'Phoenix', price: 6000, isTitle: true, subtitle: 'Rise from ashes' },
+            { id: 'title_frost', icon: titleFrostSvg, rarity: 'rare', name: 'Frost', price: 1200, isTitle: true, subtitle: 'Cold as ice' },
+            { id: 'title_thunder', icon: titleThunderSvg, rarity: 'epic', name: 'Thunder', price: 2800, isTitle: true, subtitle: 'Strike with power' },
+        ];
+
+        function showShop() {
+            hideAllScreens();
+            document.getElementById('shop-screen').classList.remove('hidden');
+            loadShopData();
+            renderBrawlShop();
+            initCarousel();
+        }
+
+        async function loadShopData() {
+            try {
+                const response = await fetch('/api/shop/data/');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('player-coins').textContent = data.coins;
+                    purchasedItems = data.purchased_items || [];
+                }
+            } catch (error) {
+                console.error('Failed to load shop data:', error);
+            }
+        }
+
+        function renderBrawlShop() {
+            const carousel = document.getElementById('shop-carousel');
+            carousel.innerHTML = shopItems.map((item, index) => createBrawlCard(item, index)).join('');
+
+            // Render dots
+            const dotsContainer = document.getElementById('carousel-dots');
+            dotsContainer.innerHTML = shopItems.map((_, index) =>
+                `<div class="carousel-dot ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></div>`
+            ).join('');
+        }
+
+        function createBrawlCard(item, index) {
+            const owned = purchasedItems.includes(item.id);
+            const cardType = item.isClass ? 'class-card' : (item.isTitle ? 'title-card' : '');
+            return `
+                <div class="brawl-card ${item.rarity} ${cardType} ${owned ? 'owned' : ''}" data-index="${index}" ${!owned && item.price ? `onclick="buyItem('${item.id}', ${item.price})"` : ''}>
+                    <div class="brawl-card-glow"></div>
+                    ${item.isClass ? `<div class="class-banner">CLASS</div>` : ''}
+                    ${item.isTitle ? `<div class="title-banner">TITLE</div>` : ''}
+                    <div class="brawl-card-icon">${item.icon}</div>
+                    ${item.name ? `<div class="brawl-card-name">${item.name}</div>` : ''}
+                    ${item.subtitle ? `<div class="brawl-card-subtitle">${item.subtitle}</div>` : ''}
+                    ${item.price ? `
+                        <div class="brawl-card-price">
+                            ${owned ? '<span class="owned-badge">OWNED</span>' : `<span class="coin-icon-small">&#128176;</span> ${item.price}`}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        async function buyItem(itemId, price) {
+            try {
+                const response = await fetch('/api/shop/buy/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ item_id: itemId, price: price }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('player-coins').textContent = data.coins;
+                    purchasedItems.push(itemId);
+                    renderBrawlShop();
+                    goToSlide(currentSlide);
+                    showPurchasePopup();
+                } else {
+                    showErrorPopup(data.error || 'Not enough coins!');
+                }
+            } catch (error) {
+                showErrorPopup('Network error');
+            }
+        }
+
+        function showPurchasePopup() {
+            const popup = document.createElement('div');
+            popup.className = 'brawl-popup';
+            popup.innerHTML = `
+                <div class="brawl-popup-content">
+                    <div class="brawl-popup-icon">&#127881;</div>
+                    <div class="brawl-popup-text">Purchase Successful!</div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 2000);
+        }
+
+        function showErrorPopup(message) {
+            const popup = document.createElement('div');
+            popup.className = 'brawl-popup error';
+            popup.innerHTML = `
+                <div class="brawl-popup-content">
+                    <div class="brawl-popup-icon">&#10060;</div>
+                    <div class="brawl-popup-text">${message}</div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 2000);
+        }
+
+        function initCarousel() {
+            const carousel = document.getElementById('shop-carousel');
+
+            // Touch events for swipe
+            carousel.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            carousel.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+
+            // Mouse events for swipe (desktop)
+            let mouseDown = false;
+            carousel.addEventListener('mousedown', (e) => {
+                mouseDown = true;
+                touchStartX = e.screenX;
+            });
+
+            carousel.addEventListener('mouseup', (e) => {
+                if (mouseDown) {
+                    touchEndX = e.screenX;
+                    handleSwipe();
+                }
+                mouseDown = false;
+            });
+
+            carousel.addEventListener('mouseleave', () => {
+                mouseDown = false;
+            });
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (!document.getElementById('shop-screen').classList.contains('hidden')) {
+                    if (e.key === 'ArrowLeft') {
+                        prevSlide();
+                    } else if (e.key === 'ArrowRight') {
+                        nextSlide();
+                    }
+                }
+            });
+
+            goToSlide(0);
+        }
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < shopItems.length - 1) {
+                goToSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                goToSlide(currentSlide - 1);
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            const carousel = document.getElementById('shop-carousel');
+            const cards = carousel.querySelectorAll('.brawl-card');
+
+            cards.forEach((card, i) => {
+                card.classList.remove('active', 'prev', 'next');
+                if (i === index) {
+                    card.classList.add('active');
+                } else if (i === index - 1) {
+                    card.classList.add('prev');
+                } else if (i === index + 1) {
+                    card.classList.add('next');
+                }
+            });
+
+            // Update dots
+            const dots = document.querySelectorAll('.carousel-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+
+            // Move carousel
+            const offset = -index * 100;
+            carousel.style.transform = `translateX(${offset}%)`;
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const loginForm = document.getElementById('login-form');
+                const registerForm = document.getElementById('register-form');
+
+                if (!loginForm.classList.contains('hidden')) {
+                    handleLogin();
+                } else if (!registerForm.classList.contains('hidden')) {
+                    handleRegister();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

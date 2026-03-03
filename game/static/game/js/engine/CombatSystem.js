@@ -2,6 +2,29 @@
 export class CombatSystem {
     constructor() {
         console.log('CombatSystem initialized');
+        this.pvpEnabled = false;
+        this.gameMode = 'coop'; // 'coop' or 'pvp'
+        this.networkManager = null;
+    }
+
+    /**
+     * Enable PvP mode for multiplayer
+     */
+    enablePvP(networkManager) {
+        this.pvpEnabled = true;
+        this.gameMode = 'pvp';
+        this.networkManager = networkManager;
+        console.log('[CombatSystem] PvP mode enabled');
+    }
+
+    /**
+     * Set to Co-op mode
+     */
+    enableCoop(networkManager) {
+        this.pvpEnabled = false;
+        this.gameMode = 'coop';
+        this.networkManager = networkManager;
+        console.log('[CombatSystem] Co-op mode enabled');
     }
 
     // Check if two boxes overlap (AABB collision)
@@ -12,8 +35,69 @@ export class CombatSystem {
                box1.y + box1.height > box2.y;
     }
 
+    /**
+     * Check PvP combat between local player and remote players
+     */
+    checkPvPCombat(player, remotePlayers, deltaTime) {
+        if (!this.pvpEnabled || !player.isAlive) return;
+
+        // Check player attack hitting other players
+        if (player.isAttacking && !player.hasHitThisAttack) {
+            const attackBox = player.getAttackHitbox();
+            if (attackBox) {
+                for (const [playerId, remotePlayer] of remotePlayers) {
+                    if (!remotePlayer.isAlive() || playerId === player.playerId) continue;
+
+                    const targetBox = remotePlayer.getHitbox();
+                    if (this.boxesOverlap(attackBox, targetBox)) {
+                        // Hit another player!
+                        console.log(`[PvP] Player ${player.playerId} hit Player ${playerId} for ${player.attackDamage} damage!`);
+
+                        // Send damage over network
+                        if (this.networkManager) {
+                            this.networkManager.sendDamage(playerId, 'player', player.attackDamage);
+                        }
+
+                        player.hasHitThisAttack = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Check player projectiles hitting other players
+        if (player.projectiles && player.projectiles.length > 0) {
+            for (const projectile of player.projectiles) {
+                if (projectile.hasHit) continue;
+
+                const projBox = {
+                    x: projectile.x - projectile.radius,
+                    y: projectile.y - projectile.radius,
+                    width: projectile.radius * 2,
+                    height: projectile.radius * 2
+                };
+
+                for (const [playerId, remotePlayer] of remotePlayers) {
+                    if (!remotePlayer.isAlive() || playerId === player.playerId) continue;
+
+                    const targetBox = remotePlayer.getHitbox();
+                    if (this.boxesOverlap(projBox, targetBox)) {
+                        console.log(`[PvP] Player ${player.playerId} projectile hit Player ${playerId} for ${projectile.damage} damage!`);
+
+                        if (this.networkManager) {
+                            this.networkManager.sendDamage(playerId, 'player', projectile.damage);
+                        }
+
+                        projectile.hasHit = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     // Handle combat between player and enemies
-    update(player, enemies, potions, armors, swords, enemySwords, slingshots, eliteArmors, eliteSwords) {
+    update(player, enemies, potions, armors, swords, enemySwords, slingshots, eliteArmors, eliteSwords, elementalShards, totems, unoCards = [], deltaTime = 0.016) {
         if (!player.isAlive) return;
 
         // Check player attack hitting enemies
@@ -22,13 +106,24 @@ export class CombatSystem {
             if (attackBox) {
                 console.log(`⚔️ Player attacking! Checking ${enemies.length} enemies for collision`);
                 for (const enemy of enemies) {
-                    if (!enemy.isAlive) continue;
+                    if (!enemy.isAlive || enemy.isBeingFinished) continue;
 
                     const enemyBox = enemy.getBounds();
                     console.log(`Checking enemy ${enemy.constructor.name} at (${enemyBox.x}, ${enemyBox.y}) size ${enemyBox.width}x${enemyBox.height}`);
                     if (this.boxesOverlap(attackBox, enemyBox)) {
                         // Player hit the enemy!
                         console.log(`✅ Hit detected on ${enemy.constructor.name}!`);
+
+                        // Check if enemy can be finished (low HP)
+                        if (enemy.canBeFinished && enemy.canBeFinished()) {
+                            // Perform finisher!
+                            player.performFinisher(enemy);
+                            player.hasHitThisAttack = true;
+                            console.log(`💀 FINISHER on ${enemy.constructor.name}!`);
+                            break;
+                        }
+
+                        // Normal damage
                         enemy.takeDamage(player.attackDamage);
                         player.hasHitThisAttack = true; // Only hit once per attack
                         console.log('Player hit enemy!');
@@ -49,7 +144,8 @@ export class CombatSystem {
                 // Enemy touching player - deal damage
                 console.log(`💥 ${enemy.constructor.name} touching player! Can attack: ${enemy.canAttack()}`);
                 if (enemy.canAttack()) {
-                    if (player.takeDamage(enemy.damage)) {
+                    // Pass enemy as attacker for UNO Reverse Card
+                    if (player.takeDamage(enemy.damage, enemy)) {
                         enemy.attack(); // Start enemy attack cooldown
                         console.log(`Enemy hit player for ${enemy.damage} damage!`);
                     }
@@ -78,13 +174,27 @@ export class CombatSystem {
                 };
 
                 for (const enemy of enemies) {
-                    if (!enemy.isAlive) continue;
+                    if (!enemy.isAlive || enemy.isBeingFinished) continue;
 
                     const enemyBox = enemy.getBounds();
                     if (this.boxesOverlap(projBox, enemyBox)) {
                         // Projectile hit enemy!
                         console.log(`💥 Player projectile hit enemy! Damage: ${projectile.damage}, Enemy HP before: ${enemy.health}`);
-                        enemy.takeDamage(projectile.damage);
+
+                        // Check for finisher (slingshot headshot)
+                        const healthAfterDamage = enemy.health - projectile.damage;
+                        const healthPercentAfter = healthAfterDamage / enemy.maxHealth;
+                        if (healthPercentAfter <= 0.25 && enemy.canBeFinished) {
+                            // Apply damage first, then check if can be finished
+                            enemy.takeDamage(projectile.damage);
+                            if (enemy.canBeFinished()) {
+                                player.performFinisher(enemy);
+                                console.log(`🎯 SLINGSHOT FINISHER on ${enemy.constructor.name}!`);
+                            }
+                        } else {
+                            enemy.takeDamage(projectile.damage);
+                        }
+
                         projectile.hasHit = true; // Mark for removal
                         console.log(`💀 Enemy HP after: ${enemy.health}, Is alive: ${enemy.isAlive}`);
                         break;
@@ -106,8 +216,8 @@ export class CombatSystem {
                     };
 
                     if (this.boxesOverlap(playerBox, projBox)) {
-                        // Projectile hit player!
-                        if (player.takeDamage(projectile.damage)) {
+                        // Projectile hit player! Pass enemy as attacker for UNO Reverse
+                        if (player.takeDamage(projectile.damage, enemy)) {
                             console.log('Boss projectile hit player!');
                         }
 
@@ -152,9 +262,9 @@ export class CombatSystem {
                 const playerBox = player.getBounds();
                 for (const zone of enemy.fireZones) {
                     if (this.boxesOverlap(playerBox, zone)) {
-                        // Player in fire zone - apply damage
+                        // Player in fire zone - apply damage (pass enemy as attacker for UNO Reverse)
                         if (!player.fireDamageTimer || player.fireDamageTimer <= 0) {
-                            player.takeDamage(zone.damage);
+                            player.takeDamage(zone.damage, enemy);
                             player.fireDamageTimer = 1.0; // Damage once per second
                             console.log('🔥 Player taking fire damage!');
                         }
@@ -165,7 +275,7 @@ export class CombatSystem {
 
         // Decrease fire damage timer
         if (player.fireDamageTimer > 0) {
-            player.fireDamageTimer -= 0.016; // Approximate delta (will be properly updated in game loop)
+            player.fireDamageTimer -= deltaTime;
         }
 
         // Check boss black holes pulling player
@@ -180,12 +290,39 @@ export class CombatSystem {
                     const dy = hole.y - playerCenterY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    if (distance < hole.radius) {
+                    // Use pullRadius for pull range (1300 pixels), radius for damage (60 pixels)
+                    const pullRange = hole.pullRadius || hole.radius;
+                    if (distance < pullRange) {
                         // Apply pull force (stronger when closer)
-                        const pullStrength = hole.pullStrength * (1 - distance / hole.radius);
-                        const pullFactor = 0.016; // Approximate deltaTime
-                        player.vx += (dx / distance) * pullStrength * pullFactor;
-                        player.vy += (dy / distance) * pullStrength * pullFactor;
+                        const pullStrength = hole.pullStrength * (1 - distance / pullRange);
+                        player.vx += (dx / distance) * pullStrength * deltaTime;
+                        player.vy += (dy / distance) * pullStrength * deltaTime;
+                    }
+                }
+            }
+        }
+
+        // Check zombie archer arrows hitting player
+        for (const enemy of enemies) {
+            if (enemy.arrows && enemy.arrows.length > 0) {
+                const playerBox = player.getBounds();
+                for (const arrow of enemy.arrows) {
+                    // Arrow hitbox
+                    const arrowBox = {
+                        x: arrow.x - arrow.length / 2,
+                        y: arrow.y - arrow.width / 2,
+                        width: arrow.length,
+                        height: arrow.width
+                    };
+
+                    if (this.boxesOverlap(playerBox, arrowBox)) {
+                        // Arrow hit player! Pass enemy as attacker for UNO Reverse
+                        if (player.takeDamage(arrow.damage, enemy)) {
+                            console.log(`🏹 Zombie archer arrow hit player for ${arrow.damage} damage!`);
+                        }
+                        // Remove arrow after hit
+                        arrow.lifetime = 0;
+                        break;
                     }
                 }
             }
@@ -300,6 +437,55 @@ export class CombatSystem {
                     // Player collected elite sword (20 damage)
                     eliteSword.collect();
                     player.equipEliteSword();
+                }
+            }
+        }
+
+        // Check player collecting elemental shards
+        if (elementalShards) {
+            for (const shard of elementalShards) {
+                if (shard.isCollected) continue;
+
+                const playerBox = player.getBounds();
+                const shardBox = shard.getBounds();
+
+                if (this.boxesOverlap(playerBox, shardBox)) {
+                    // Player collected elemental shard
+                    shard.collect();
+                    player.collectElementalShard(shard.elementType);
+                    console.log(`✨ Player collected ${shard.elementType} elemental shard!`);
+                }
+            }
+        }
+
+        // Check player collecting totems
+        if (totems) {
+            for (const totem of totems) {
+                if (totem.isCollected) continue;
+
+                const playerBox = player.getBounds();
+                const totemBox = totem.getBounds();
+
+                if (this.boxesOverlap(playerBox, totemBox)) {
+                    // Player collected totem
+                    totem.collect();
+                    player.equipTotem();
+                }
+            }
+        }
+
+        // Check player collecting UNO Reverse Cards
+        if (unoCards) {
+            for (const card of unoCards) {
+                if (card.isCollected) continue;
+
+                const playerBox = player.getBounds();
+                const cardBox = card.getBounds();
+
+                if (this.boxesOverlap(playerBox, cardBox)) {
+                    // Player collected UNO Reverse Card
+                    card.collect();
+                    player.equipUnoReverse();
                 }
             }
         }

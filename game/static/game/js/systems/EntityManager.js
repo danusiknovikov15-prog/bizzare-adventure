@@ -12,7 +12,10 @@ export class EntityManager {
             enemySwords: [],
             slingshots: [],
             eliteArmors: [],
-            eliteSwords: []
+            eliteSwords: [],
+            elementalShards: [],
+            totems: [],
+            unoCards: []
         };
 
         console.log('EntityManager initialized');
@@ -83,7 +86,7 @@ export class EntityManager {
      * @returns {number} Total number of entities removed
      */
     cleanupAllCollected() {
-        const itemCategories = ['potions', 'armors', 'swords', 'enemySwords', 'slingshots', 'eliteArmors', 'eliteSwords'];
+        const itemCategories = ['potions', 'armors', 'swords', 'enemySwords', 'slingshots', 'eliteArmors', 'eliteSwords', 'elementalShards', 'totems', 'unoCards'];
         let totalRemoved = 0;
 
         for (const category of itemCategories) {

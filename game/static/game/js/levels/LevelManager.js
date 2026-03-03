@@ -3,10 +3,14 @@ import { Platform } from '../entities/Platform.js';
 import { Enemy } from '../entities/Enemy.js';
 import { Boss } from '../entities/Boss.js';
 import { EliteEnemy } from '../entities/EliteEnemy.js';
+import { ZombieArcher } from '../entities/ZombieArcher.js';
 import { Door } from '../entities/Door.js';
 import { ItemFactory } from '../systems/ItemFactory.js';
 import { LootSystem } from '../systems/LootSystem.js';
 import { EntityManager } from '../systems/EntityManager.js';
+import { ElementalShard } from '../entities/ElementalShard.js';
+import { TotemOfUndying } from '../entities/TotemOfUndying.js';
+import { UnoReverseCard } from '../entities/UnoReverseCard.js';
 
 // Import specialized bosses
 import { AcidBoss } from '../entities/bosses/AcidBoss.js';
@@ -123,6 +127,9 @@ export class LevelManager {
                 } else if (enemyData.isElite) {
                     enemy = new EliteEnemy(enemyData.x, enemyData.y);
                     console.log('👑 ELITE ENEMY SPAWNED!');
+                } else if (enemyData.isZombieArcher) {
+                    enemy = new ZombieArcher(enemyData.x, enemyData.y);
+                    console.log('🏹 ZOMBIE ARCHER SPAWNED!');
                 } else {
                     enemy = new Enemy(enemyData.x, enemyData.y);
                 }
@@ -291,11 +298,32 @@ export class LevelManager {
     }
 
     // Remove dead enemies and generate loot
-    cleanupDeadEnemies() {
+    cleanupDeadEnemies(player = null) {
         const enemies = this.entityManager.getEntities('enemies');
         const deadEnemies = enemies.filter(e => !e.isAlive);
 
+        if (deadEnemies.length > 0) {
+            console.log(`🔍 cleanupDeadEnemies: Found ${deadEnemies.length} dead enemies, player=${!!player}`);
+        }
+
         for (const enemy of deadEnemies) {
+            // Check if boss should drop elemental shard - add directly to player inventory
+            // Skip basic bosses (level 4) - they don't drop shards
+            console.log(`🔍 Dead enemy: shouldDropShard=${enemy.shouldDropShard}, bossType=${enemy.bossType}, hasInventory=${!!(player && player.inventory)}`);
+            if (enemy.shouldDropShard && enemy.bossType && enemy.bossType !== 'basic' && player && player.inventory) {
+                console.log(`🎯 Calling player.collectElementalShard('${enemy.bossType}')`);
+                try {
+                    player.collectElementalShard(enemy.bossType);
+                    console.log(`✨ ${enemy.bossType} elemental shard successfully added to player inventory!`);
+                } catch (error) {
+                    console.error(`❌ Error collecting elemental shard:`, error);
+                }
+            } else if (enemy.shouldDropShard && enemy.bossType === 'basic') {
+                console.log(`ℹ️ Basic boss defeated - no elemental shard dropped (by design)`);
+            } else if (enemy.shouldDropShard) {
+                console.warn(`⚠️ Boss died but shard not collected. shouldDropShard=${enemy.shouldDropShard}, bossType=${enemy.bossType}, player=${!!player}, inventory=${!!(player && player.inventory)}`);
+            }
+
             // Generate loot through LootSystem
             const drops = this.lootSystem.generateLoot(enemy);
 
@@ -385,6 +413,52 @@ export class LevelManager {
     // Remove collected elite swords
     cleanupCollectedEliteSwords() {
         return this.entityManager.cleanupCollected('eliteSwords');
+    }
+
+    // Get elemental shards
+    getElementalShards() {
+        return this.entityManager.getEntities('elementalShards');
+    }
+
+    // Remove collected elemental shards
+    cleanupCollectedElementalShards() {
+        return this.entityManager.cleanupCollected('elementalShards');
+    }
+
+    // Get totems
+    getTotems() {
+        return this.entityManager.getEntities('totems');
+    }
+
+    // Remove collected totems
+    cleanupCollectedTotems() {
+        return this.entityManager.cleanupCollected('totems');
+    }
+
+    // Spawn a totem at position
+    spawnTotem(x, y) {
+        const totem = new TotemOfUndying(x, y);
+        this.entityManager.addEntity('totems', totem);
+        console.log(`🗿 Totem of Undying spawned at (${x}, ${y})`);
+        return totem;
+    }
+
+    // Get UNO Reverse Cards
+    getUnoCards() {
+        return this.entityManager.getEntities('unoCards');
+    }
+
+    // Remove collected UNO cards
+    cleanupCollectedUnoCards() {
+        return this.entityManager.cleanupCollected('unoCards');
+    }
+
+    // Spawn UNO Reverse Card at position
+    spawnUnoCard(x, y) {
+        const card = new UnoReverseCard(x, y);
+        this.entityManager.addEntity('unoCards', card);
+        console.log(`🔄 UNO Reverse Card spawned at (${x}, ${y})`);
+        return card;
     }
 
     // Remove all collected items at once

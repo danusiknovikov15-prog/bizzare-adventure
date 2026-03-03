@@ -1,0 +1,379 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby - {{ room.code }}</title>
+    <link rel="stylesheet" href="{% static 'game/css/main.css' %}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+
+        .lobby-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .room-code-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .room-code {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4a90d9;
+            letter-spacing: 3px;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .mode-coop { background: linear-gradient(135deg, #4ad94a, #2d8a2d); }
+        .mode-pvp { background: linear-gradient(135deg, #d94a4a, #8a2d2d); }
+
+        .lobby-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        .players-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #4a90d9;
+        }
+
+        .player-slot {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .player-slot.occupied {
+            border-left-color: currentColor;
+        }
+
+        .player-slot.empty {
+            opacity: 0.5;
+        }
+
+        .player-status {
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+
+        .player-name {
+            flex: 1;
+            font-size: 1.1em;
+        }
+
+        .host-badge {
+            background: gold;
+            color: black;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .empty-slot {
+            color: #666;
+            font-style: italic;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .settings-section, .chat-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .setting-label {
+            color: #aaa;
+        }
+
+        select {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            font-size: 1em;
+        }
+
+        select:disabled {
+            opacity: 0.5;
+        }
+
+        .chat-messages {
+            height: 150px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .btn-ready {
+            background: linear-gradient(135deg, #4ad94a, #2d8a2d);
+            color: white;
+        }
+
+        .btn-ready.not-ready {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #4a90d9, #357abd);
+            color: white;
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-leave {
+            background: linear-gradient(135deg, #d94a4a, #8a2d2d);
+            color: white;
+            flex: 0.5;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .lobby-content {
+                grid-template-columns: 1fr;
+            }
+
+            .lobby-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lobby-container">
+        <div class="lobby-header">
+            <div class="room-code-display">
+                <span>Room Code:</span>
+                <span class="room-code" id="roomCode">{{ room.code }}</span>
+                <button class="copy-btn" id="copyCodeBtn" title="Copy to clipboard">Copy</button>
+            </div>
+            <div class="mode-badge mode-{{ room.mode }}">
+                {{ room.mode|upper }}
+            </div>
+        </div>
+
+        <div class="lobby-content">
+            <div class="players-section">
+                <h2 class="section-title">Players</h2>
+                <div id="playersList">
+                    <!-- Players will be rendered here -->
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="settings-section">
+                    <h3 class="section-title">Settings</h3>
+                    <div class="setting-row">
+                        <span class="setting-label">Mode</span>
+                        <select id="modeSelect" {% if not is_host %}disabled{% endif %}>
+                            <option value="coop" {% if room.mode == 'coop' %}selected{% endif %}>Co-op</option>
+                            <option value="pvp" {% if room.mode == 'pvp' %}selected{% endif %}>PvP</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Level</span>
+                        <select id="levelSelect" {% if not is_host %}disabled{% endif %}>
+                            {% for i in "12345678901234567890"|make_list %}
+                            {% with level=forloop.counter %}
+                            <option value="{{ level }}" {% if room.level_number == level %}selected{% endif %}>Level {{ level }}</option>
+                            {% endwith %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chat-section">
+                    <h3 class="section-title">Chat</h3>
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-input-row">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+                        <button class="copy-btn" id="chatSendBtn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-ready not-ready" id="readyBtn">READY</button>
+            {% if is_host %}
+            <button class="btn btn-start" id="startBtn" disabled>Waiting for players...</button>
+            {% endif %}
+            <button class="btn btn-leave" id="leaveBtn">Leave</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { LobbyUI } from '{% static "game/js/multiplayer/LobbyUI.js" %}';
+
+        const roomCode = '{{ room.code }}';
+        const isHost = {{ is_host|yesno:"true,false" }};
+        const currentUserId = {{ request.user.id }};
+
+        const lobby = new LobbyUI(roomCode, isHost);
+
+        // Bind UI elements
+        lobby.bindElements({
+            playersList: document.getElementById('playersList'),
+            readyButton: document.getElementById('readyBtn'),
+            startButton: document.getElementById('startBtn'),
+            copyCodeButton: document.getElementById('copyCodeBtn'),
+            modeSelect: document.getElementById('modeSelect'),
+            levelSelect: document.getElementById('levelSelect'),
+            chatMessages: document.getElementById('chatMessages'),
+            chatInput: document.getElementById('chatInput'),
+            chatSendButton: document.getElementById('chatSendBtn')
+        });
+
+        // Ready button toggle visual
+        let isReady = false;
+        document.getElementById('readyBtn').onclick = () => {
+            isReady = !isReady;
+            const btn = document.getElementById('readyBtn');
+            btn.classList.toggle('not-ready', !isReady);
+            btn.textContent = isReady ? 'READY!' : 'READY';
+            lobby.toggleReady();
+        };
+
+        // Game start handler
+        lobby.onGameStart = (code) => {
+            window.location.href = `/multiplayer/game/${code}/`;
+        };
+
+        // Leave button
+        document.getElementById('leaveBtn').onclick = async () => {
+            await fetch('/api/room/leave/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: roomCode })
+            });
+            window.location.href = '/multiplayer/';
+        };
+
+        // Copy code
+        document.getElementById('copyCodeBtn').onclick = () => {
+            navigator.clipboard.writeText(roomCode);
+            const btn = document.getElementById('copyCodeBtn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        };
+
+        // Connect to lobby WebSocket
+        lobby.connect();
+    </script>
+</body>
+</html>

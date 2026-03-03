@@ -314,3 +314,984 @@
 .hidden {
     display: none !important;
 }
+
+/* New menu system styles */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #1a1a2e;
+}
+
+.menu-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            #3d2817 0px,
+            #3d2817 16px,
+            #2d1f13 16px,
+            #2d1f13 32px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            #3d2817 0px,
+            #3d2817 16px,
+            #2d1f13 16px,
+            #2d1f13 32px
+        );
+    background-size: 32px 32px;
+    animation: backgroundScroll 20s linear infinite;
+}
+
+.game-title {
+    font-family: 'Courier New', monospace;
+    font-size: 72px;
+    font-weight: bold;
+    color: #FFFF55;
+    text-shadow:
+        3px 3px 0px #3F3F00,
+        6px 6px 0px rgba(0, 0, 0, 0.8);
+    margin-bottom: 60px;
+    letter-spacing: 6px;
+    animation: titleFloat 3s ease-in-out infinite;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+}
+
+.menu-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    min-width: 400px;
+}
+
+.menu-button {
+    width: 400px;
+    height: 48px;
+    background: linear-gradient(to bottom, #8B8B8B 0%, #5A5A5A 100%);
+    border: none;
+    box-shadow:
+        inset -3px -5px 0px rgba(0, 0, 0, 0.6),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.4),
+        0px 5px 0px #2a2a2a,
+        0px 6px 0px #1a1a1a;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    font-weight: bold;
+    color: #E0E0E0;
+    text-shadow:
+        2px 2px 0px rgba(0, 0, 0, 0.9),
+        3px 3px 0px rgba(0, 0, 0, 0.6);
+    letter-spacing: 2px;
+}
+
+.menu-button:hover {
+    background: linear-gradient(to bottom, #A0A0FF 0%, #7070D0 100%);
+    color: #FFFFA0;
+}
+
+.menu-button:active {
+    transform: translateY(3px);
+    box-shadow:
+        inset -2px -3px 0px rgba(0, 0, 0, 0.6),
+        inset 2px 2px 0px rgba(255, 255, 255, 0.3),
+        0px 2px 0px #2a2a2a;
+}
+
+.menu-button-secondary {
+    background: linear-gradient(to bottom, #666666 0%, #444444 100%);
+}
+
+.menu-button-exit {
+    background: linear-gradient(to bottom, #B87070 0%, #8B4545 100%);
+}
+
+.menu-button-exit:hover {
+    background: linear-gradient(to bottom, #FF8080 0%, #D05050 100%);
+}
+
+.menu-button-multiplayer {
+    background: linear-gradient(to bottom, #70B870 0%, #458B45 100%);
+}
+
+.menu-button-multiplayer:hover {
+    background: linear-gradient(to bottom, #80D080 0%, #50D050 100%);
+    box-shadow:
+        inset -3px -5px 0px rgba(0, 0, 0, 0.6),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.5),
+        0px 5px 0px #3a6a3a,
+        0px 6px 0px #2a5a2a;
+}
+
+.menu-button-shop {
+    background: linear-gradient(to bottom, #D4AF37 0%, #A08020 100%);
+}
+
+.menu-button-shop:hover {
+    background: linear-gradient(to bottom, #FFD700 0%, #DAA520 100%);
+    box-shadow:
+        inset -3px -5px 0px rgba(0, 0, 0, 0.6),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.5),
+        0px 5px 0px #8B7500,
+        0px 6px 0px #6B5500;
+}
+
+.menu-button-classes {
+    background: linear-gradient(to bottom, #7df9ff 0%, #00CED1 100%);
+}
+
+.menu-button-classes:hover {
+    background: linear-gradient(to bottom, #AFEEEE 0%, #40E0D0 100%);
+    box-shadow:
+        inset -3px -5px 0px rgba(0, 0, 0, 0.6),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.5),
+        0px 5px 0px #008B8B,
+        0px 6px 0px #006666;
+}
+
+.menu-button-titles {
+    background: linear-gradient(to bottom, #FFD700 0%, #FFA500 100%);
+}
+
+.menu-button-titles:hover {
+    background: linear-gradient(to bottom, #FFE44D 0%, #FFB347 100%);
+    box-shadow:
+        inset -3px -5px 0px rgba(0, 0, 0, 0.6),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.5),
+        0px 5px 0px #CC7000,
+        0px 6px 0px #994D00;
+}
+
+.menu-button-admin {
+    background: linear-gradient(to bottom, #9370DB 0%, #6A5ACD 100%);
+}
+
+.menu-button-admin:hover {
+    background: linear-gradient(to bottom, #BA55D3 0%, #9932CC 100%);
+    box-shadow:
+        inset -3px -5px 0px rgba(0, 0, 0, 0.6),
+        inset 3px 3px 0px rgba(255, 255, 255, 0.5),
+        0px 5px 0px #483D8B,
+        0px 6px 0px #2F2F5B;
+}
+
+.menu-input {
+    width: 380px;
+    height: 40px;
+    padding: 0 10px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 3px solid #666666;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8);
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    color: #FFFFFF;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.9);
+}
+
+.menu-input:focus {
+    outline: none;
+    border-color: #A0A0FF;
+    box-shadow:
+        inset 2px 2px 5px rgba(0, 0, 0, 0.8),
+        0 0 10px rgba(160, 160, 255, 0.5);
+}
+
+.menu-input::placeholder {
+    color: #888888;
+}
+
+.error-message {
+    color: #FF6666;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    min-height: 20px;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.9);
+}
+
+.player-info {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border: 3px solid #666666;
+    margin-bottom: 20px;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8);
+}
+
+.player-name {
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    color: #FFFF55;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.9);
+    margin: 0 0 10px 0;
+}
+
+.player-stats {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    color: #CCCCCC;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.9);
+    margin: 0;
+}
+
+.menu-subtitle {
+    font-family: 'Courier New', monospace;
+    font-size: 36px;
+    color: #FFFF55;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.9);
+    margin-bottom: 30px;
+}
+
+.stats-container, .settings-container {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 30px;
+    border: 3px solid #666666;
+    margin-bottom: 20px;
+    min-width: 350px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #444444;
+    font-family: 'Courier New', monospace;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: #AAAAAA;
+    font-size: 16px;
+}
+
+.stat-value {
+    color: #FFFF55;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.setting-note {
+    font-family: 'Courier New', monospace;
+    color: #888888;
+    font-size: 18px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 36px;
+        margin-bottom: 30px;
+    }
+
+    .menu-screen {
+        min-width: 300px;
+    }
+
+    .menu-button {
+        width: 300px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .menu-input {
+        width: 280px;
+    }
+
+    .menu-subtitle {
+        font-size: 28px;
+    }
+
+    .stats-container, .settings-container {
+        min-width: 280px;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 28px;
+        margin-bottom: 20px;
+    }
+
+    .menu-screen {
+        min-width: 250px;
+    }
+
+    .menu-button {
+        width: 250px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .menu-input {
+        width: 230px;
+    }
+}
+
+/* ========================================
+   BRAWL STARS STYLE SHOP
+   ======================================== */
+
+.brawl-shop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.brawl-shop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+}
+
+.brawl-shop-title {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    color: #FFD700;
+    text-shadow:
+        3px 3px 0px #B8860B,
+        6px 6px 0px rgba(0,0,0,0.5),
+        0 0 30px rgba(255, 215, 0, 0.5);
+    letter-spacing: 4px;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.brawl-close-btn {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(180deg, #FF4444 0%, #CC0000 100%);
+    border: 4px solid #880000;
+    border-radius: 12px;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 #660000, 0 6px 10px rgba(0,0,0,0.4);
+}
+
+.brawl-close-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #660000, 0 8px 15px rgba(0,0,0,0.4);
+}
+
+.brawl-close-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #660000;
+}
+
+.brawl-coins {
+    display: flex;
+    align-items: center;
+}
+
+.coin-display {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(180deg, #2a2a4a 0%, #1a1a2a 100%);
+    padding: 10px 25px;
+    border-radius: 25px;
+    border: 3px solid #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.coin-icon-brawl {
+    font-size: 28px;
+    margin-right: 10px;
+    animation: coinBounce 2s ease-in-out infinite;
+}
+
+@keyframes coinBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.coin-display span:last-child {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 24px;
+    color: #FFD700;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+}
+
+.brawl-shop-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* Carousel Styles */
+.brawl-carousel {
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    width: 100%;
+    cursor: grab;
+    user-select: none;
+}
+
+.brawl-carousel:active {
+    cursor: grabbing;
+}
+
+.brawl-carousel-dots {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.carousel-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-dot:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.2);
+}
+
+.carousel-dot.active {
+    background: #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    transform: scale(1.3);
+}
+
+/* Brawl Card Styles - Carousel */
+.brawl-card {
+    position: relative;
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(180deg, #3a3a5a 0%, #2a2a3a 100%);
+    border-radius: 35px;
+    padding: 50px;
+    text-align: center;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: 7px solid #4a4a6a;
+    overflow: hidden;
+    width: 320px;
+    height: 320px;
+    margin: 0 auto;
+    opacity: 0.3;
+    transform: scale(0.7);
+}
+
+/* Active card in carousel */
+.brawl-card.active {
+    opacity: 1;
+    transform: scale(1);
+    z-index: 10;
+}
+
+.brawl-card.prev,
+.brawl-card.next {
+    opacity: 0.5;
+    transform: scale(0.8);
+}
+
+.brawl-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(45deg);
+    transition: all 0.5s;
+    opacity: 0;
+}
+
+.brawl-card.active::before {
+    animation: cardShine 2s ease-in-out infinite;
+}
+
+@keyframes cardShine {
+    0% { transform: translateX(-100%) rotate(45deg); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateX(100%) rotate(45deg); opacity: 0; }
+}
+
+/* Rarity Colors */
+.brawl-card.common {
+    border-color: #888888;
+    background: linear-gradient(180deg, #4a4a5a 0%, #3a3a4a 100%);
+}
+
+.brawl-card.rare {
+    border-color: #4FC3F7;
+    background: linear-gradient(180deg, #1a4a6a 0%, #0a2a4a 100%);
+    box-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
+}
+
+.brawl-card.epic {
+    border-color: #BA68C8;
+    background: linear-gradient(180deg, #4a1a6a 0%, #2a0a4a 100%);
+    box-shadow: 0 0 20px rgba(186, 104, 200, 0.3);
+}
+
+.brawl-card.legendary {
+    border-color: #FFD700;
+    background: linear-gradient(180deg, #5a4a1a 0%, #3a2a0a 100%);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+    animation: legendaryGlow 2s ease-in-out infinite;
+}
+
+@keyframes legendaryGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
+}
+
+.brawl-card.mythic {
+    border-color: #ff0044;
+    background: linear-gradient(180deg, #4a0a2a 0%, #2a0015 100%);
+    box-shadow: 0 0 40px rgba(255, 0, 68, 0.5);
+    animation: mythicGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes mythicGlow {
+    0%, 100% { box-shadow: 0 0 30px rgba(255, 0, 68, 0.5), inset 0 0 20px rgba(255, 0, 68, 0.1); }
+    50% { box-shadow: 0 0 60px rgba(255, 0, 68, 0.8), inset 0 0 30px rgba(255, 0, 68, 0.2); }
+}
+
+.brawl-card-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    pointer-events: none;
+}
+
+.brawl-card.legendary .brawl-card-glow {
+    background: radial-gradient(ellipse at center, rgba(255,215,0,0.1) 0%, transparent 70%);
+}
+
+.brawl-card.mythic .brawl-card-glow {
+    background: radial-gradient(ellipse at center, rgba(255,0,68,0.15) 0%, transparent 70%);
+}
+
+.brawl-card-icon {
+    font-size: 130px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+}
+
+.brawl-card.active .brawl-card-icon {
+    animation: iconFloat 2s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-15px) scale(1.1); }
+}
+
+/* Class card styles */
+.brawl-card.class-card {
+    flex: 0 0 180px !important;
+    flex-direction: column;
+    padding: 15px !important;
+    cursor: pointer;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: 220px !important;
+    margin-top: 40px !important;
+}
+
+.brawl-card.class-card .brawl-card-icon {
+    font-size: 55px !important;
+    margin-bottom: 8px;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brawl-card.class-card .brawl-card-icon svg {
+    width: 100px !important;
+    height: 100px !important;
+    max-width: 100px !important;
+    max-height: 100px !important;
+}
+
+/* Title card styles */
+.brawl-card.title-card {
+    flex: 0 0 150px !important;
+    flex-direction: column;
+    padding: 12px !important;
+    cursor: pointer;
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
+    margin-top: 20px !important;
+}
+
+.brawl-card.title-card .brawl-card-icon {
+    font-size: 48px !important;
+    margin-bottom: 8px;
+}
+
+.brawl-card.title-card .brawl-card-name {
+    font-size: 14px;
+}
+
+.brawl-card.title-card .brawl-card-subtitle {
+    font-size: 10px;
+}
+
+.brawl-card.title-card .brawl-card-price {
+    font-size: 14px;
+}
+
+.title-banner {
+    position: absolute;
+    top: 10px;
+    right: -30px;
+    background: linear-gradient(90deg, #9c27b0, #e91e63);
+    color: white;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 9px;
+    padding: 3px 30px;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+    letter-spacing: 1px;
+}
+
+.class-banner {
+    position: absolute;
+    top: 15px;
+    left: -35px;
+    background: linear-gradient(90deg, #FF6B00 0%, #FF9500 100%);
+    color: white;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 12px;
+    padding: 5px 40px;
+    transform: rotate(-45deg);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+    letter-spacing: 2px;
+}
+
+.brawl-card-name {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 22px;
+    color: #FFFFFF;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    margin-bottom: 8px;
+}
+
+.brawl-card.class-card .brawl-card-name {
+    font-size: 16px;
+}
+
+.brawl-card-subtitle {
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: #7df9ff;
+    text-shadow: 0 0 10px rgba(125, 249, 255, 0.5);
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+.brawl-card-price {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 20px;
+    color: #FFD700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.brawl-card.class-card .brawl-card-price {
+    font-size: 14px;
+}
+
+.coin-icon-small {
+    font-size: 18px;
+}
+
+.owned-badge {
+    background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 15px;
+    font-size: 12px;
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+}
+
+.brawl-card.owned {
+    opacity: 0.7;
+}
+
+.brawl-card.owned .brawl-card-icon {
+    filter: grayscale(50%) drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+}
+
+/* Purchase Popup */
+.brawl-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    animation: popupAppear 0.3s ease;
+}
+
+@keyframes popupAppear {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.brawl-popup-content {
+    background: linear-gradient(180deg, #2a4a2a 0%, #1a3a1a 100%);
+    border: 5px solid #4CAF50;
+    border-radius: 25px;
+    padding: 40px 60px;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(76, 175, 80, 0.5);
+}
+
+.brawl-popup.error .brawl-popup-content {
+    background: linear-gradient(180deg, #4a2a2a 0%, #3a1a1a 100%);
+    border-color: #FF4444;
+    box-shadow: 0 0 50px rgba(255, 68, 68, 0.5);
+}
+
+.brawl-popup-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+}
+
+.brawl-popup-text {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 24px;
+    color: #FFFFFF;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .brawl-shop-header {
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .brawl-shop-title {
+        font-size: 28px;
+        order: 2;
+        width: 100%;
+        text-align: center;
+    }
+
+    .brawl-close-btn {
+        order: 1;
+    }
+
+    .brawl-coins {
+        order: 3;
+    }
+
+    .brawl-card {
+        width: 260px;
+        height: 260px;
+        padding: 35px;
+    }
+
+    .brawl-card-icon {
+        font-size: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    .brawl-card {
+        width: 220px;
+        height: 220px;
+        padding: 25px;
+    }
+
+    .brawl-card-icon {
+        font-size: 80px;
+    }
+
+    .coin-display span:last-child {
+        font-size: 18px;
+    }
+
+    .carousel-dot {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+/* Menu Screen - make it scrollable */
+.menu-screen {
+    position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+}
+
+.menu-screen::-webkit-scrollbar {
+    width: 10px;
+}
+
+.menu-screen::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.menu-screen::-webkit-scrollbar-thumb {
+    background: #666666;
+    border-radius: 5px;
+}
+
+.menu-screen::-webkit-scrollbar-thumb:hover {
+    background: #888888;
+}
+
+/* ========================================
+   CLASSES SCREEN
+   ======================================== */
+
+.classes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.class-item {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(180deg, #3a3a5a 0%, #2a2a3a 100%);
+    border: 4px solid #7df9ff;
+    border-radius: 15px;
+    padding: 15px;
+    gap: 15px;
+    box-shadow: 0 0 20px rgba(125, 249, 255, 0.3);
+}
+
+.class-item.locked {
+    border-color: #666;
+    opacity: 0.5;
+    box-shadow: none;
+}
+
+.class-item.equipped {
+    border-color: #4CAF50;
+    box-shadow: 0 0 25px rgba(76, 175, 80, 0.5);
+}
+
+.equipped-badge-btn {
+    background: linear-gradient(180deg, #9E9E9E 0%, #757575 100%) !important;
+    border-color: #616161 !important;
+    box-shadow: 0 3px 0 #616161 !important;
+    cursor: default !important;
+}
+
+.class-icon {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+}
+
+.class-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.class-info {
+    flex: 1;
+}
+
+.class-name {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    margin-bottom: 5px;
+}
+
+.class-desc {
+    font-size: 12px;
+    color: #7df9ff;
+    font-style: italic;
+}
+
+.equip-btn {
+    background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+    border: 3px solid #1B5E20;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 14px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 3px 0 #1B5E20;
+}
+
+.equip-btn:hover {
+    background: linear-gradient(180deg, #66BB6A 0%, #43A047 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 #1B5E20;
+}
+
+.equip-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #1B5E20;
+}
+
+.no-classes {
+    text-align: center;
+    color: #888;
+    font-size: 16px;
+    padding: 40px 20px;
+}
