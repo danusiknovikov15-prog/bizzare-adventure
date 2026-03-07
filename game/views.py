@@ -696,7 +696,35 @@ def admin_give_item(request):
                 'weapons': ['weapon_fire_sword', 'weapon_ice_bow', 'weapon_lightning', 'lightsaber'],
                 'upgrades': ['upgrade_health', 'upgrade_speed', 'upgrade_damage', 'upgrade_armor'],
                 'consumables': ['health_potion', 'speed_boost', 'damage_boost', 'shield', 'double_jump'],
-                'classes': ['class_jedi', 'class_enemy_king', 'class_chef', 'class_skibidi', 'class_sukuna', 'class_boxer'],
+                'classes': [
+                    'class_jedi', 'class_enemy_king', 'class_chef', 'class_skibidi', 'class_sukuna', 'class_boxer',
+                    # 100 New classes - Common
+                    'class_knight', 'class_guard', 'class_squire', 'class_soldier', 'class_militia',
+                    'class_blacksmith', 'class_miner', 'class_lumberjack', 'class_farmer', 'class_fisher',
+                    'class_scout', 'class_hunter', 'class_nomad', 'class_explorer', 'class_wanderer',
+                    'class_baker_c', 'class_bard', 'class_thief', 'class_merchant', 'class_herbalist',
+                    'class_apprentice', 'class_novice', 'class_recruit', 'class_trainee', 'class_cadet',
+                    'class_sailor', 'class_cobbler', 'class_shepherd', 'class_messenger', 'class_tinkerer',
+                    # Rare
+                    'class_samurai', 'class_viking', 'class_gladiator', 'class_ronin', 'class_duelist',
+                    'class_fire_mage', 'class_ice_mage', 'class_alchemist', 'class_druid', 'class_shaman',
+                    'class_berserker', 'class_monk', 'class_pirate', 'class_mercenary', 'class_marauder',
+                    'class_paladin', 'class_crusader', 'class_templar', 'class_cleric', 'class_priest',
+                    'class_shadow_dancer', 'class_wind_runner', 'class_acrobat', 'class_ranger', 'class_swashbuckler',
+                    # Epic
+                    'class_necromancer', 'class_vampire', 'class_shadow_assassin', 'class_dark_sorcerer', 'class_soul_reaper',
+                    'class_dragon_knight', 'class_wyvern_rider', 'class_storm_caller', 'class_thunder_warrior', 'class_archmage',
+                    'class_battle_mage', 'class_enchanter', 'class_blade_master', 'class_war_chief', 'class_phantom',
+                    'class_void_walker', 'class_blood_warrior', 'class_frost_lord', 'class_spirit_walker', 'class_titan',
+                    # Legendary
+                    'class_dragon_lord', 'class_death_knight', 'class_archangel', 'class_demon_king', 'class_shadow_lord',
+                    'class_elemental_master', 'class_god_of_war', 'class_immortal', 'class_chaos_knight', 'class_void_emperor',
+                    'class_ancient_dragon', 'class_celestial', 'class_doom_bringer', 'class_time_lord', 'class_astral_knight',
+                    # Mythic
+                    'class_cosmic_titan', 'class_infinity_knight', 'class_shadow_emperor', 'class_one_punch',
+                    'class_reality_breaker', 'class_eternal_warlord', 'class_soul_slayer', 'class_war_god',
+                    'class_infinity_mage', 'class_dimension_lord',
+                ],
                 'titles': ['title_warrior', 'title_legend', 'title_champion', 'title_godslayer', 'title_shadow', 'title_phoenix', 'title_frost', 'title_thunder']
             }
 

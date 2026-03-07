@@ -690,7 +690,13 @@ game.applyItemEffect = function(itemId) {
             player.attackDamage = Math.floor(player.attackDamage * 1.15);
             break;
         default:
-            console.log(`Unknown item: ${itemId}`);
+            // Handle generic classes from the 100 new classes system
+            if (itemId.startsWith('class_') && typeof CLASS_STATS !== 'undefined' && CLASS_STATS[itemId]) {
+                player.equipGenericClass(itemId);
+                console.log(`Equipped generic class: ${itemId}`);
+            } else {
+                console.log(`Unknown item: ${itemId}`);
+            }
     }
 };
 

@@ -947,6 +947,78 @@ export class Player extends Entity {
         return true;
     }
 
+    // Generic class equip system for 100 new classes
+    // Uses CLASS_STATS from ClassDatabase.js
+    equipGenericClass(classId) {
+        if (this._genericClassEquipped === classId) {
+            console.log(`Class ${classId} already equipped!`);
+            return false;
+        }
+        this._genericClassEquipped = classId;
+
+        // Get stats from CLASS_STATS (defined in ClassDatabase.js)
+        const stats = (typeof CLASS_STATS !== 'undefined') ? CLASS_STATS[classId] : null;
+        if (!stats) {
+            console.log(`No stats found for class: ${classId}`);
+            return false;
+        }
+
+        // Apply damage multiplier
+        if (stats.dmg && stats.dmg !== 1.0) {
+            this.attackDamage = Math.floor(this.attackDamage * stats.dmg);
+        }
+
+        // Apply speed multiplier
+        if (stats.spd && stats.spd !== 1.0) {
+            this.speed = this.speed * stats.spd;
+        }
+
+        // Apply jump multiplier
+        if (stats.jump && stats.jump !== 1.0) {
+            this.jumpForce = (this.jumpForce || -15) * stats.jump;
+        }
+
+        // Apply health bonus
+        if (stats.hp && stats.hp !== 0) {
+            this.maxHealth += stats.hp;
+            this.health = Math.min(this.health + Math.max(0, stats.hp), this.maxHealth);
+        }
+
+        // Apply attack speed multiplier
+        if (stats.atkSpd && stats.atkSpd !== 1.0) {
+            this.attackCooldown = Math.max(0.1, (this.attackCooldown || 0.3) / stats.atkSpd);
+        }
+
+        // Apply lifesteal
+        if (stats.lifesteal) {
+            this.lifesteal = (this.lifesteal || 0) + stats.lifesteal;
+        }
+
+        // Add weapon to inventory if class has one
+        if (stats.weapon) {
+            if (this.inventory.findItemSlot(stats.weapon) === -1) {
+                this.inventory.addItem(stats.weapon, 1);
+            }
+            // Register weapon damage
+            if (stats.weaponDmg) {
+                this.weaponDamage = this.weaponDamage || {};
+                this.weaponDamage[stats.weapon] = stats.weaponDmg;
+            }
+        }
+
+        this.updateCurrentDamage();
+        const bonuses = [];
+        if (stats.dmg > 1) bonuses.push(`+${Math.round((stats.dmg - 1) * 100)}% DMG`);
+        if (stats.spd > 1) bonuses.push(`+${Math.round((stats.spd - 1) * 100)}% SPD`);
+        if (stats.jump > 1) bonuses.push(`+${Math.round((stats.jump - 1) * 100)}% JUMP`);
+        if (stats.hp > 0) bonuses.push(`+${stats.hp} HP`);
+        if (stats.atkSpd > 1) bonuses.push(`+${Math.round((stats.atkSpd - 1) * 100)}% ATK SPD`);
+        if (stats.lifesteal) bonuses.push(`${Math.round(stats.lifesteal * 100)}% LIFESTEAL`);
+        if (stats.weapon) bonuses.push(stats.weapon);
+        console.log(`Equipped ${classId}: ${bonuses.join(', ')}`);
+        return true;
+    }
+
     // Collect elemental shard
     collectElementalShard(elementType) {
         console.log(`🔍 collectElementalShard called with elementType: ${elementType}`);

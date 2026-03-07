@@ -6,6 +6,7 @@
     <title>Platformer Game - Main Menu</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'game/css/menu.css' %}">
+    <script src="{% static 'game/js/ClassDatabase.js' %}"></script>
 </head>
 <body>
     <!-- Admin Quick Panel - Top Right (only for staff/superusers) -->
@@ -176,6 +177,32 @@
                 </div>
                 <div class="brawl-carousel-dots" id="carousel-dots">
                     <!-- Dots loaded dynamically -->
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                    <span style="color:#aaa; font-size:12px;">Daily rotation: 12 of 100 new classes shown. Changes daily!</span>
+                    <br>
+                    <button onclick="showAllClasses()" style="margin-top:8px; padding:8px 20px; background:linear-gradient(180deg,#4a4a6a,#2a2a4a); border:2px solid #6a6a8a; color:#fff; border-radius:8px; cursor:pointer; font-size:13px; font-weight:bold;">Browse All 100 Classes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Classes Grid Modal -->
+        <div id="all-classes-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; overflow-y:auto;">
+            <div style="max-width:900px; margin:20px auto; padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2 style="color:#fff; margin:0;">All Classes (100)</h2>
+                    <button onclick="hideAllClasses()" style="background:#ff4444; border:none; color:#fff; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:16px; font-weight:bold;">&times; Close</button>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+                    <button onclick="filterClasses('all')" class="filter-btn active" style="padding:6px 14px; border-radius:15px; border:1px solid #666; background:#444; color:#fff; cursor:pointer; font-size:12px;">All</button>
+                    <button onclick="filterClasses('common')" class="filter-btn" style="padding:6px 14px; border-radius:15px; border:1px solid #888; background:transparent; color:#888; cursor:pointer; font-size:12px;">Common (30)</button>
+                    <button onclick="filterClasses('rare')" class="filter-btn" style="padding:6px 14px; border-radius:15px; border:1px solid #4FC3F7; background:transparent; color:#4FC3F7; cursor:pointer; font-size:12px;">Rare (25)</button>
+                    <button onclick="filterClasses('epic')" class="filter-btn" style="padding:6px 14px; border-radius:15px; border:1px solid #BA68C8; background:transparent; color:#BA68C8; cursor:pointer; font-size:12px;">Epic (20)</button>
+                    <button onclick="filterClasses('legendary')" class="filter-btn" style="padding:6px 14px; border-radius:15px; border:1px solid #FFD700; background:transparent; color:#FFD700; cursor:pointer; font-size:12px;">Legendary (15)</button>
+                    <button onclick="filterClasses('mythic')" class="filter-btn" style="padding:6px 14px; border-radius:15px; border:1px solid #ff0044; background:transparent; color:#ff0044; cursor:pointer; font-size:12px;">Mythic (10)</button>
+                </div>
+                <div id="all-classes-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px;">
+                    <!-- Filled dynamically -->
                 </div>
             </div>
         </div>
@@ -999,13 +1026,18 @@
             <path d="M60 18 L65 10 L70 20" fill="#ff99aa"/>
         </svg>`;
 
+        // Get 12 daily rotation classes from the 100 new classes
+        const dailyRotationClasses = getDailyShopClasses(12);
+
         const shopItems = [
-            // Classes
+            // Permanent Classes (always in shop)
             { id: 'class_sukuna', icon: sukunaSvg, rarity: 'mythic', name: 'Sukuna', price: 22000, isClass: true, subtitle: 'King of Curses!' },
             { id: 'class_jedi', icon: jediSvg, rarity: 'legendary', name: 'Jedi', price: 7000, isClass: true, subtitle: 'Includes Lightsaber!' },
             { id: 'class_enemy_king', icon: enemyKingSvg, rarity: 'legendary', name: 'Enemy King', price: 10000, isClass: true, subtitle: 'Command the darkness!' },
             { id: 'class_chef', icon: chefSvg, rarity: 'epic', name: 'Chef', price: 5000, isClass: true, subtitle: 'Cooking up damage!' },
             { id: 'class_boxer', icon: boxerSvg, rarity: 'rare', name: 'Boxer', price: 2000, isClass: true, subtitle: 'Knockout punches!' },
+            // Daily Rotation Classes (12 random from 100, changes daily)
+            ...dailyRotationClasses,
             // Titles
             { id: 'title_warrior', icon: titleWarriorSvg, rarity: 'common', name: 'Warrior', price: 500, isTitle: true, subtitle: 'Battle-hardened fighter' },
             { id: 'title_legend', icon: titleLegendSvg, rarity: 'rare', name: 'Legend', price: 1500, isTitle: true, subtitle: 'A name to remember' },
@@ -1094,6 +1126,54 @@
             } catch (error) {
                 showErrorPopup('Network error');
             }
+        }
+
+        // === Browse All 100 Classes ===
+        let currentClassFilter = 'all';
+
+        function showAllClasses() {
+            document.getElementById('all-classes-modal').style.display = 'block';
+            renderAllClassesGrid('all');
+        }
+
+        function hideAllClasses() {
+            document.getElementById('all-classes-modal').style.display = 'none';
+        }
+
+        function filterClasses(rarity) {
+            currentClassFilter = rarity;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.style.background = 'transparent';
+                btn.classList.remove('active');
+            });
+            event.target.style.background = '#444';
+            event.target.classList.add('active');
+            renderAllClassesGrid(rarity);
+        }
+
+        function renderAllClassesGrid(rarity) {
+            const grid = document.getElementById('all-classes-grid');
+            const allItems = getAllClassShopItems();
+            const filtered = rarity === 'all' ? allItems : allItems.filter(c => c.rarity === rarity);
+
+            const rarityColors = {
+                common: '#888', rare: '#4FC3F7', epic: '#BA68C8', legendary: '#FFD700', mythic: '#ff0044'
+            };
+
+            grid.innerHTML = filtered.map(c => {
+                const owned = purchasedItems.includes(c.id);
+                const borderColor = rarityColors[c.rarity] || '#888';
+                return `<div style="background:rgba(30,30,45,0.9); border:2px solid ${borderColor}; border-radius:10px; padding:10px; text-align:center; cursor:${owned ? 'default' : 'pointer'}; transition:transform 0.2s; ${owned ? 'opacity:0.7;' : ''}"
+                    ${!owned ? `onclick="buyItem('${c.id}', ${c.price}); renderAllClassesGrid('${currentClassFilter}');"` : ''}
+                    onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="width:70px; height:70px; margin:0 auto 5px;">${c.icon}</div>
+                    <div style="color:#fff; font-size:12px; font-weight:bold;">${c.name}</div>
+                    <div style="color:${borderColor}; font-size:10px; text-transform:uppercase;">${c.rarity}</div>
+                    <div style="color:#aaa; font-size:10px; margin-top:3px;">${c.subtitle}</div>
+                    ${owned ? '<div style="color:#4CAF50; font-size:11px; font-weight:bold; margin-top:3px;">OWNED</div>' :
+                    `<div style="color:#FFD700; font-size:11px; margin-top:3px;">💰 ${c.price}</div>`}
+                </div>`;
+            }).join('');
         }
 
         function showPurchasePopup() {
