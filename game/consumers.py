@@ -364,6 +364,20 @@ class GameConsumer(AsyncWebsocketConsumer):
                     'input': data.get('input', {})
                 }
             )
+
+        elif message_type == 'voice.signal':
+            # WebRTC signaling for in-game voice chat.
+            # Relay only to the intended player when target_player_id is provided.
+            target_player_id = data.get('target_player_id')
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    'type': 'voice_signal',
+                    'sender_id': self.user.id,
+                    'target_player_id': target_player_id,
+                    'signal': data.get('signal', {})
+                }
+            )
         elif message_type == 'game.state':
             # Only host should send this
             is_host = await self.check_is_host()
@@ -460,6 +474,19 @@ class GameConsumer(AsyncWebsocketConsumer):
             return False
 
     # Event handlers
+
+    async def voice_signal(self, event):
+        target_id = event.get('target_player_id')
+        if target_id is not None and int(target_id) != int(self.user.id):
+            return
+        if event['sender_id'] == self.user.id:
+            return
+        await self.send(text_data=json.dumps({
+            'type': 'voice.signal',
+            'sender_id': event['sender_id'],
+            'signal': event['signal']
+        }))
+
     async def player_state(self, event):
         # Don't send to the player who sent it
         if event['player_id'] != self.user.id:
