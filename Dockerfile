@@ -16,4 +16,4 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 10000
 
-CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:$PORT platformer_project.wsgi:application"]
+CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && exec daphne -b 0.0.0.0 -p ${PORT:-10000} platformer_project.asgi:application"]
