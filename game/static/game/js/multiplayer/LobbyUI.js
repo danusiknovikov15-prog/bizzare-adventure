@@ -272,11 +272,9 @@ export class LobbyUI {
         btn.style.display = 'block';
 
         // Check if all non-host players are ready
-        const nonHostPlayers = this.players.filter(p => !p.is_host);
-        const allReady = nonHostPlayers.every(p => p.is_ready);
-
-        btn.disabled = !allReady;
-        btn.textContent = allReady ? 'START GAME' : 'Waiting for players...';
+        const playerCount = this.players.length;
+        btn.disabled = playerCount < 1;
+        btn.textContent = playerCount > 0 ? 'START GAME' : 'Waiting for players...';
     }
 
     /**
