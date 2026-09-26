@@ -365,6 +365,16 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        elif message_type == 'multiplayer.event':
+            # Only the host is allowed to author synchronized random events.
+            if await self.check_is_host():
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        'type': 'multiplayer_event',
+                        'event': data.get('event', {})
+                    }
+                )
         elif message_type == 'voice.signal':
             # WebRTC signaling for in-game voice chat.
             # Relay only to the intended player when target_player_id is provided.
@@ -474,6 +484,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             return False
 
     # Event handlers
+
+    async def multiplayer_event(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'multiplayer.event',
+            'event': event.get('event', {})
+        }))
 
     async def voice_signal(self, event):
         target_id = event.get('target_player_id')
