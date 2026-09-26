@@ -8,8 +8,18 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>Multiplayer Game - {{ room.code }}</title>
     <link rel="stylesheet" href="{% static 'game/css/main.css' %}">
+<style>
+#voiceChatPanel{position:fixed;top:10px;left:10px;z-index:150;display:flex;align-items:center;gap:6px}
+#voiceChatBtn{border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(10,10,20,.78);color:#fff;padding:9px 12px;font-weight:bold;touch-action:manipulation}
+#voiceStatus{color:#fff;font:12px Arial;background:rgba(0,0,0,.65);border-radius:8px;padding:6px 8px;min-height:14px}
+@media(max-width:767px){
+  #multiplayerHUD{top:8px!important;right:8px!important;transform:scale(.78);transform-origin:top right}
+  #voiceChatPanel{top:8px;left:8px;transform:scale(.82);transform-origin:top left}
+}
+</style>
 </head>
 <body>
+    <div id="voiceChatPanel"><button id="voiceChatBtn" type="button">🎤 Voice</button><span id="voiceStatus"></span></div>
     <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
 
