@@ -39,6 +39,13 @@ urlpatterns = [
     path('api/shop/inventory/', views.shop_inventory, name='shop_inventory'),
     path('api/shop/equip/', views.shop_equip, name='shop_equip'),
 
+    # Trading API
+    path('api/trades/create/', views.create_trade_offer, name='create_trade_offer'),
+    path('api/trades/', views.trade_offers, name='trade_offers'),
+    path('api/trades/<int:offer_id>/accept/', views.accept_trade, name='accept_trade'),
+    path('api/trades/<int:offer_id>/reject/', views.reject_trade, name='reject_trade'),
+    path('api/trades/<int:offer_id>/cancel/', views.cancel_trade, name='cancel_trade'),
+
     # Classes API
     path('api/class/equip/', views.equip_class, name='equip_class'),
     path('api/class/equipped/', views.get_equipped_class, name='get_equipped_class'),
