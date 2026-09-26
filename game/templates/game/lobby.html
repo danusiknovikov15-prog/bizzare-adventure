@@ -291,12 +291,13 @@
                             <option value="escort" {% if room.mode == 'escort' %}selected{% endif %}>🛡️ Escort</option>
                             <option value="treasure" {% if room.mode == 'treasure' %}selected{% endif %}>💎 Treasure Hunt</option>
                             <option value="infection" {% if room.mode == 'infection' %}selected{% endif %}>🦠 Infection</option>
+                            <option value="story" {% if room.mode == 'story' %}selected{% endif %}>📖 Story Mode</option>
                         </select>
                     </div>
                     <div class="setting-row">
                         <span class="setting-label">Level</span>
                         <select id="levelSelect" {% if not is_host %}disabled{% endif %}>
-                            {% for i in "12345678901234567890"|make_list %}
+                            {% for i in "123456789012345678901234567890"|make_list %}
                             {% with level=forloop.counter %}
                             <option value="{{ level }}" {% if room.level_number == level %}selected{% endif %}>Level {{ level }}</option>
                             {% endwith %}
