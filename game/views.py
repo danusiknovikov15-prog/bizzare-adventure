@@ -1116,6 +1116,18 @@ def get_equipped_title(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+
+@login_required
+def trade_inventory(request):
+    items = PlayerInventory.objects.filter(user=request.user).order_by('item_type', 'item_id')
+    return JsonResponse({
+        'success': True,
+        'items': [
+            {'type': i.item_type, 'id': i.item_id, 'quantity': i.quantity}
+            for i in items
+        ]
+    })
+
 # Trading API
 @login_required
 @csrf_exempt
