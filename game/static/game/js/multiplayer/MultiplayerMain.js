@@ -163,11 +163,14 @@ export function initMultiplayerGame(config) {
     };
     const stateSync = new StateSync(networkManager, config.isHost);
     networkManager.onLevelComplete = (nextLevel, finished) => {
+        const completedLevel = Number(config.level || 1);
+        if (BOSS_STONE_LEVELS.includes(completedLevel)) grantBossStone(completedLevel);
         if (finished) {
             const banner = document.createElement('div');
             banner.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;color:#ffd700;font:900 42px Arial;text-align:center;';
             banner.textContent = 'STORY COMPLETE! 🎉';
             document.body.appendChild(banner);
+            if (collectedStones.length >= 5) { grantBossStone(30); infinityGauntlet=true; setTimeout(playGauntletCutscene,700); }
             return;
         }
         const box = document.getElementById('storyDialog');
@@ -177,6 +180,85 @@ export function initMultiplayerGame(config) {
 
     // Remote players map
     const remotePlayers = new Map();
+    // Boss stones and the Infinity Gauntlet.
+    const STONE_NAMES = ['Power Stone','Space Stone','Reality Stone','Soul Stone','Time Stone','Mind Stone'];
+    const BOSS_STONE_LEVELS = [5,10,15,20,25,30];
+    const stoneKey = 'bizarre_stones_' + config.roomCode;
+    let collectedStones = JSON.parse(localStorage.getItem(stoneKey) || '[]');
+    let infinityGauntlet = collectedStones.length >= 6;
+    let gauntletCooldown = 0;
+    let gauntletButton = null;
+
+    function saveStones() { localStorage.setItem(stoneKey, JSON.stringify(collectedStones)); }
+    function updateStoneHUD() {
+        let hud = document.getElementById('stoneHUD');
+        if (!hud) { hud = document.createElement('div'); hud.id = 'stoneHUD'; document.body.appendChild(hud); }
+        hud.innerHTML = '<b>💎 Infinity Stones</b><br>' + STONE_NAMES.map((s,i) =>
+            '<span style="opacity:' + (collectedStones.includes(i) ? 1 : .25) + '">' +
+            (collectedStones.includes(i) ? '●' : '○') + ' ' + s + '</span>').join('<br>');
+        if (infinityGauntlet) hud.innerHTML += '<hr><b>⚡ INFINITY GAUNTLET</b>';
+    }
+    function grantBossStone(levelNumber) {
+        const index = BOSS_STONE_LEVELS.indexOf(Number(levelNumber));
+        if (index < 0 || collectedStones.includes(index)) return;
+        collectedStones.push(index);
+        collectedStones.sort((a,b)=>a-b);
+        saveStones();
+        updateStoneHUD();
+        const banner = document.createElement('div');
+        banner.id = 'stonePickupBanner';
+        banner.textContent = '💎 ' + STONE_NAMES[index] + ' acquired!';
+        document.body.appendChild(banner);
+        setTimeout(()=>banner.remove(),3000);
+    }
+    function playGauntletCutscene() {
+        const scene = document.createElement('div');
+        scene.id = 'gauntletCutscene';
+        scene.innerHTML = '<div class="gauntlet-title">THE INFINITY STONES</div><div class="stone-orbit">💎</div><div class="gauntlet-text">The six stones awaken...</div><div class="gauntlet-final">⚡ INFINITY GAUNTLET ⚡</div>';
+        document.body.appendChild(scene);
+        setTimeout(()=>scene.classList.add('combine'),2200);
+        setTimeout(()=>{ scene.remove(); infinityGauntlet=true; updateStoneHUD(); createGauntletButton(); },4800);
+    }
+    function createGauntletButton() {
+        if (gauntletButton) return;
+        gauntletButton = document.createElement('button');
+        gauntletButton.id = 'infinityGauntletBtn';
+        gauntletButton.textContent = '⚡';
+        gauntletButton.title = 'Infinity Gauntlet — 20 second cooldown';
+        document.body.appendChild(gauntletButton);
+        gauntletButton.onclick = useInfinityGauntlet;
+    }
+    function dustEnemy(enemyId) {
+        const enemy = levelManager.getEnemies().find(e=>e.id===enemyId);
+        if (!enemy) return;
+        enemy.health = 0;
+        enemy.isAlive = false;
+        const dust = document.createElement('div');
+        dust.className = 'dust-burst';
+        dust.textContent = '✦ ✧ ✦ ✧ ✦';
+        document.body.appendChild(dust);
+        setTimeout(()=>dust.remove(),800);
+    }
+    function useInfinityGauntlet() {
+        if (!infinityGauntlet || gauntletCooldown > 0 || !player) return;
+        let nearest=null, distance=Infinity;
+        for (const enemy of levelManager.getEnemies()) {
+            if (!enemy.isAlive) continue;
+            const d=Math.hypot(enemy.x-player.x,enemy.y-player.y);
+            if (d<350 && d<distance) { nearest=enemy; distance=d; }
+        }
+        if (!nearest) return;
+        gauntletCooldown=20;
+        if (gauntletButton) { gauntletButton.disabled=true; gauntletButton.textContent='⏳ 20'; }
+        networkManager.send('gauntlet.use',{target_id:nearest.id});
+        dustEnemy(nearest.id);
+        const timer=setInterval(()=>{
+            gauntletCooldown--;
+            if (gauntletButton) gauntletButton.textContent=gauntletCooldown>0 ? '⏳ '+gauntletCooldown : '⚡';
+            if (gauntletCooldown<=0) { clearInterval(timer); if(gauntletButton) gauntletButton.disabled=false; }
+        },1000);
+    }
+
 
     // Random event system: host chooses one event and the server broadcasts it to everyone.
     let lastEventId = 0;
@@ -210,6 +292,7 @@ export function initMultiplayerGame(config) {
     }
 
     networkManager.onMultiplayerEvent = showMultiplayerEvent;
+    networkManager.onGauntletUse = (targetId) => dustEnemy(targetId);
 
     // Load level
     const currentLevelIndex = Math.max(0, Math.min(levels.length - 1, Number(config.level || 1) - 1));
@@ -261,6 +344,8 @@ export function initMultiplayerGame(config) {
 
     // Create local player
     const player = new Player(levelInfo.playerSpawn.x, levelInfo.playerSpawn.y);
+    updateStoneHUD();
+    if (infinityGauntlet) createGauntletButton();
     player.playerId = config.playerId;
     player.playerSlot = config.playerSlot;
     player.username = config.username;
