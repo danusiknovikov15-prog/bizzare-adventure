@@ -5,6 +5,9 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.db import transaction
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 import json
 OWNER_USERNAME = 'DanillaBOSS'
 
@@ -32,9 +35,29 @@ def ensure_owner_account(user):
 from .models import (
     UserProfile, LevelProgress, PlayerInventory, GameSession,
     MultiplayerRoom, RoomPlayer, MatchmakingQueue,
-    ShopItem, PlayerCoins, PlayerPurchase
+    ShopItem, PlayerCoins, PlayerPurchase, TradeOffer
 )
 
+
+
+def broadcast_room_state(room_code):
+    """Push the latest room state to every connected lobby client."""
+    try:
+        room = MultiplayerRoom.objects.get(code=room_code)
+        players = [{
+            'id': p.user.id, 'username': p.user.username, 'slot': p.player_slot,
+            'is_ready': p.is_ready, 'is_host': p.is_host
+        } for p in room.players.select_related('user').all()]
+        state = {
+            'code': room.code, 'mode': room.mode, 'status': room.status,
+            'level': room.level_number, 'max_players': room.max_players,
+            'players': players, 'is_private': room.is_private
+        }
+        async_to_sync(get_channel_layer().group_send)(
+            f'lobby_{room.code}', {'type': 'room_update', 'room': state}
+        )
+    except MultiplayerRoom.DoesNotExist:
+        pass
 
 def index(request):
     """Main menu - shown to all users"""
@@ -276,6 +299,7 @@ def create_room(request):
                 is_host=True
             )
 
+            broadcast_room_state(room.code)
             return JsonResponse({
                 'success': True,
                 'room_code': room.code,
@@ -323,6 +347,7 @@ def join_room(request):
                 player_slot=next_slot
             )
 
+            broadcast_room_state(room.code)
             return JsonResponse({
                 'success': True,
                 'room_code': room.code,
@@ -437,6 +462,9 @@ def leave_room(request):
                     remaining.save()
                 else:
                     room.delete()
+
+            if MultiplayerRoom.objects.filter(pk=room.pk).exists():
+                broadcast_room_state(room.code)
 
             return JsonResponse({'success': True})
 
@@ -1086,3 +1114,79 @@ def get_equipped_title(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+# Trading API
+@login_required
+@csrf_exempt
+def create_trade_offer(request):
+    if request.method != 'POST': return JsonResponse({'success': False, 'error': 'POST required'})
+    try:
+        data = json.loads(request.body)
+        username = (data.get('username') or '').strip()
+        offered_type = (data.get('offered_item_type') or 'items').strip()[:50]
+        offered_id = (data.get('offered_item_id') or '').strip()[:100]
+        requested_type = (data.get('requested_item_type') or 'items').strip()[:50]
+        requested_id = (data.get('requested_item_id') or '').strip()[:100]
+        offered_qty = int(data.get('offered_quantity', 1))
+        requested_qty = int(data.get('requested_quantity', 1))
+        if not username or not offered_id or not requested_id or offered_qty < 1 or requested_qty < 1:
+            return JsonResponse({'success': False, 'error': 'Fill in all trade fields'})
+        if username == request.user.username: return JsonResponse({'success': False, 'error': 'You cannot trade with yourself'})
+        recipient = User.objects.get(username=username)
+        if not PlayerInventory.objects.filter(user=request.user, item_type=offered_type, item_id=offered_id, quantity__gte=offered_qty).exists():
+            return JsonResponse({'success': False, 'error': 'You do not have enough of the offered item'})
+        if not PlayerInventory.objects.filter(user=recipient, item_type=requested_type, item_id=requested_id, quantity__gte=requested_qty).exists():
+            return JsonResponse({'success': False, 'error': 'That player does not have the requested item'})
+        offer = TradeOffer.objects.create(sender=request.user, recipient=recipient, offered_item_type=offered_type, offered_item_id=offered_id, offered_quantity=offered_qty, requested_item_type=requested_type, requested_item_id=requested_id, requested_quantity=requested_qty)
+        return JsonResponse({'success': True, 'offer_id': offer.id})
+    except User.DoesNotExist: return JsonResponse({'success': False, 'error': 'Player not found'})
+    except Exception as e: return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def trade_offers(request):
+    incoming = TradeOffer.objects.filter(recipient=request.user, status='pending').select_related('sender')[:30]
+    outgoing = TradeOffer.objects.filter(sender=request.user, status='pending').select_related('recipient')[:30]
+    def pack(o):
+        return {'id': o.id, 'from': o.sender.username, 'to': o.recipient.username, 'offered': {'type': o.offered_item_type, 'id': o.offered_item_id, 'quantity': o.offered_quantity}, 'requested': {'type': o.requested_item_type, 'id': o.requested_item_id, 'quantity': o.requested_quantity}, 'status': o.status, 'created_at': o.created_at.isoformat()}
+    return JsonResponse({'success': True, 'incoming': [pack(o) for o in incoming], 'outgoing': [pack(o) for o in outgoing]})
+
+@login_required
+@csrf_exempt
+def accept_trade(request, offer_id):
+    if request.method != 'POST': return JsonResponse({'success': False, 'error': 'POST required'})
+    try:
+        with transaction.atomic():
+            offer = TradeOffer.objects.select_for_update().get(id=offer_id, recipient=request.user, status='pending')
+            sender_item = PlayerInventory.objects.select_for_update().filter(user=offer.sender, item_type=offer.offered_item_type, item_id=offer.offered_item_id).first()
+            recipient_item = PlayerInventory.objects.select_for_update().filter(user=request.user, item_type=offer.requested_item_type, item_id=offer.requested_item_id).first()
+            if not sender_item or sender_item.quantity < offer.offered_quantity: return JsonResponse({'success': False, 'error': 'Sender no longer has the offered item'})
+            if not recipient_item or recipient_item.quantity < offer.requested_quantity: return JsonResponse({'success': False, 'error': 'You no longer have the requested item'})
+            sender_item.quantity -= offer.offered_quantity; recipient_item.quantity -= offer.requested_quantity
+            sender_item.save(update_fields=['quantity']); recipient_item.save(update_fields=['quantity'])
+            if sender_item.quantity == 0: sender_item.delete()
+            if recipient_item.quantity == 0: recipient_item.delete()
+            got_sender, _ = PlayerInventory.objects.get_or_create(user=request.user, item_type=offer.offered_item_type, item_id=offer.offered_item_id, defaults={'quantity': 0})
+            got_recipient, _ = PlayerInventory.objects.get_or_create(user=offer.sender, item_type=offer.requested_item_type, item_id=offer.requested_item_id, defaults={'quantity': 0})
+            got_sender.quantity += offer.offered_quantity; got_recipient.quantity += offer.requested_quantity
+            got_sender.save(update_fields=['quantity']); got_recipient.save(update_fields=['quantity'])
+            offer.status = 'accepted'; offer.save(update_fields=['status', 'updated_at'])
+        return JsonResponse({'success': True})
+    except TradeOffer.DoesNotExist: return JsonResponse({'success': False, 'error': 'Trade offer not found or already handled'})
+    except Exception as e: return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+@csrf_exempt
+def reject_trade(request, offer_id):
+    if request.method != 'POST': return JsonResponse({'success': False, 'error': 'POST required'})
+    try:
+        offer = TradeOffer.objects.get(id=offer_id, recipient=request.user, status='pending'); offer.status = 'rejected'; offer.save(update_fields=['status', 'updated_at']); return JsonResponse({'success': True})
+    except TradeOffer.DoesNotExist: return JsonResponse({'success': False, 'error': 'Trade offer not found'})
+
+@login_required
+@csrf_exempt
+def cancel_trade(request, offer_id):
+    if request.method != 'POST': return JsonResponse({'success': False, 'error': 'POST required'})
+    try:
+        offer = TradeOffer.objects.get(id=offer_id, sender=request.user, status='pending'); offer.status = 'cancelled'; offer.save(update_fields=['status', 'updated_at']); return JsonResponse({'success': True})
+    except TradeOffer.DoesNotExist: return JsonResponse({'success': False, 'error': 'Trade offer not found'})
