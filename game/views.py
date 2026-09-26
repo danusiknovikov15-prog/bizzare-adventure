@@ -6,7 +6,30 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
-OWNER_USERNAME = 'DanillaBOSS'\n\n\ndef ensure_owner_account(user):\n    """Bootstrap the configured game owner account."""\n    if user.username == OWNER_USERNAME:\n        profile, _ = UserProfile.objects.get_or_create(user=user)\n        changed_user = False\n        if not user.is_staff:\n            user.is_staff = True\n            changed_user = True\n        if not user.is_superuser:\n            user.is_superuser = True\n            changed_user = True\n        if changed_user:\n            user.save(update_fields=['is_staff', 'is_superuser'])\n        if profile.rank != 'owner':\n            profile.rank = 'owner'\n            profile.save(update_fields=['rank'])\n        return profile\n    return None\n\n\nfrom .models import (
+OWNER_USERNAME = 'DanillaBOSS'
+
+
+def ensure_owner_account(user):
+    """Bootstrap the configured game owner account."""
+    if user.username == OWNER_USERNAME:
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        changed_user = False
+        if not user.is_staff:
+            user.is_staff = True
+            changed_user = True
+        if not user.is_superuser:
+            user.is_superuser = True
+            changed_user = True
+        if changed_user:
+            user.save(update_fields=['is_staff', 'is_superuser'])
+        if profile.rank != 'owner':
+            profile.rank = 'owner'
+            profile.save(update_fields=['rank'])
+        return profile
+    return None
+
+
+from .models import (
     UserProfile, LevelProgress, PlayerInventory, GameSession,
     MultiplayerRoom, RoomPlayer, MatchmakingQueue,
     ShopItem, PlayerCoins, PlayerPurchase
@@ -57,6 +80,7 @@ def register_view(request):
 
             # Create profile
             UserProfile.objects.create(user=user)
+            ensure_owner_account(user)
 
             # Auto-login
             login(request, user)
@@ -81,8 +105,9 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
 
             if user is not None:
+                owner_profile = ensure_owner_account(user)
                 login(request, user)
-                profile = UserProfile.objects.get(user=user)
+                profile = owner_profile or UserProfile.objects.get(user=user)
                 return JsonResponse({
                     'success': True,
                     'username': username,
