@@ -527,6 +527,59 @@ def multiplayer_game(request, room_code):
         return redirect('game:multiplayer_menu')
 
 
+
+@login_required
+@csrf_exempt
+def admin_add_admin(request):
+    """Admin: promote a normal player to admin."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'})
+
+    try:
+        actor_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+        # Both admins and the owner can add admins.
+        if not actor_profile.is_admin():
+            return JsonResponse({'success': False, 'error': 'Admin access required'})
+
+        data = json.loads(request.body)
+        username = (data.get('username') or '').strip()
+
+        if not username:
+            return JsonResponse({'success': False, 'error': 'Username required'})
+
+        try:
+            target = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User not found'})
+
+        target_profile, _ = UserProfile.objects.get_or_create(user=target)
+
+        # The owner account cannot be changed through this feature.
+        if target.username == OWNER_USERNAME or target_profile.is_owner() or target.is_superuser:
+            return JsonResponse({'success': False, 'error': 'The owner account cannot be changed here'})
+
+        if target_profile.is_admin() or target.is_staff:
+            return JsonResponse({'success': False, 'error': 'User is already an admin'})
+
+        target_profile.rank = 'admin'
+        target_profile.save(update_fields=['rank'])
+
+        # Django's staff flag keeps the existing admin features working.
+        target.is_staff = True
+        target.is_superuser = False
+        target.save(update_fields=['is_staff', 'is_superuser'])
+
+        return JsonResponse({
+            'success': True,
+            'username': target.username,
+            'rank': target_profile.rank,
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 # Shop API
 
 @login_required
