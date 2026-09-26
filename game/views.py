@@ -79,7 +79,7 @@ def game(request):
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     return render(request, 'game/game.html', {
         'profile': profile,
-        'level_range': range(1, 31),  # Levels 1-30
+        'level_range': range(1, 331),  # Levels 1-330
     })
 
 
@@ -516,7 +516,8 @@ def multiplayer_lobby(request, room_code):
         return render(request, 'game/lobby.html', {
             'room': room,
             'player': player,
-            'is_host': player.is_host
+            'is_host': player.is_host,
+            'level_range': range(1, 331)
         })
 
     except MultiplayerRoom.DoesNotExist:
