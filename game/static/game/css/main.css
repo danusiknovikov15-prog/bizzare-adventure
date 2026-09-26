@@ -145,10 +145,11 @@ body {
 
 .mobile-controls-hidden .joystick-area,.mobile-controls-hidden .action-buttons{opacity:0;pointer-events:none}
 @media(max-width:767px){
-    .joystick-area{width:140px;height:140px;bottom:18px;left:14px}
-    .joystick-base{width:140px;height:140px}
-    .action-buttons{right:14px;bottom:18px;gap:12px}
-    .action-button{width:78px;height:78px;font-size:14px}
-    #gameCanvas{width:100vw;height:100dvh}
+    .joystick-area{width:108px;height:108px;bottom:12px;left:10px}
+    .joystick-base{width:108px;height:108px}
+    .joystick-stick{width:42px;height:42px}
+    .action-buttons{right:10px;bottom:12px;gap:7px}
+    .action-button{width:58px;height:58px;font-size:12px;border-width:2px}
+    #gameCanvas{width:94vw;height:94dvh;margin:3dvh auto}
     body{height:100dvh}
 }
