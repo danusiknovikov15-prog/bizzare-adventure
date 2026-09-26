@@ -281,8 +281,16 @@
                     <div class="setting-row">
                         <span class="setting-label">Mode</span>
                         <select id="modeSelect" {% if not is_host %}disabled{% endif %}>
-                            <option value="coop" {% if room.mode == 'coop' %}selected{% endif %}>Co-op</option>
-                            <option value="pvp" {% if room.mode == 'pvp' %}selected{% endif %}>PvP</option>
+                            <option value="coop" {% if room.mode == 'coop' %}selected{% endif %}>🤝 Co-op</option>
+                            <option value="pvp" {% if room.mode == 'pvp' %}selected{% endif %}>⚔️ PvP</option>
+                            <option value="survival" {% if room.mode == 'survival' %}selected{% endif %}>🧟 Survival</option>
+                            <option value="bossrush" {% if room.mode == 'bossrush' %}selected{% endif %}>👑 Boss Rush</option>
+                            <option value="race" {% if room.mode == 'race' %}selected{% endif %}>🏁 Race</option>
+                            <option value="kinghill" {% if room.mode == 'kinghill' %}selected{% endif %}>🏔️ King of the Hill</option>
+                            <option value="capture" {% if room.mode == 'capture' %}selected{% endif %}>🚩 Capture Point</option>
+                            <option value="escort" {% if room.mode == 'escort' %}selected{% endif %}>🛡️ Escort</option>
+                            <option value="treasure" {% if room.mode == 'treasure' %}selected{% endif %}>💎 Treasure Hunt</option>
+                            <option value="infection" {% if room.mode == 'infection' %}selected{% endif %}>🦠 Infection</option>
                         </select>
                     </div>
                     <div class="setting-row">
