@@ -187,7 +187,7 @@ export function initMultiplayerGame(config) {
     const BOSS_STONE_LEVELS = [5,10,15,20,25,30];
     const stoneKey = 'bizarre_stones_' + config.roomCode;
     let collectedStones = JSON.parse(localStorage.getItem(stoneKey) || '[]');
-    let infinityGauntlet = collectedStones.length >= 6 || Number(config.level || 1) >= 31;
+    let infinityGauntlet = collectedStones.length >= 6 || Number(config.level || 1) >= 31 || localStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true' || localStorage.getItem('bizarre_infinity_gauntlet') === 'true';
     let gauntletCooldown = 0;
     let gauntletButton = null;
 
