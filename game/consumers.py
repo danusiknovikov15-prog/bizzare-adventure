@@ -115,8 +115,13 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         except RoomPlayer.DoesNotExist:
             return False
 
+    async def leave_room(self):
+        # Database work must run inside the sync-to-async wrapper.
+        await self._leave_room_db()
+        await self.broadcast_room_update()
+
     @database_sync_to_async
-    def leave_room(self):
+    def _leave_room_db(self):
         try:
             player = RoomPlayer.objects.get(
                 room__code=self.room_code,
@@ -126,7 +131,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
             was_host = player.is_host
             player.delete()
 
-            # If host left, assign new host or delete room
+            # If host left, assign a new host or delete the empty room.
             if was_host:
                 remaining = room.players.first()
                 if remaining:
@@ -134,8 +139,6 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                     remaining.save()
                 else:
                     room.delete()
-            if room.players.exists():
-                await self.broadcast_room_update()
         except RoomPlayer.DoesNotExist:
             pass
 
