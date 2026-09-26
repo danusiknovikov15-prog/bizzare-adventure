@@ -36,6 +36,7 @@ import { NetworkManager } from './NetworkManager.js';
 import { RemotePlayer } from './RemotePlayer.js';
 import { StateSync } from './StateSync.js';
 import { VoiceChat } from './VoiceChat.js';
+import { getRandomMultiplayerEvent } from './MultiplayerEvents.js';
 
 const levels = [
     level1, level2, level3, level4, level5,
@@ -147,6 +148,39 @@ export function initMultiplayerGame(config) {
 
     // Remote players map
     const remotePlayers = new Map();
+
+    // Random event system: host chooses one event and the server broadcasts it to everyone.
+    let lastEventId = 0;
+    let activeEvent = null;
+    let eventTimer = 0;
+    const EVENT_INTERVAL = 30000;
+
+    function showMultiplayerEvent(event) {
+        activeEvent = event;
+        const old = document.getElementById('multiplayerEventBanner');
+        if (old) old.remove();
+        const banner = document.createElement('div');
+        banner.id = 'multiplayerEventBanner';
+        banner.innerHTML = '<span class="event-icon">' + event.icon + '</span><span><b>' + event.name + '</b><small>Multiplayer Event • ' + event.duration + 's</small></span>';
+        document.body.appendChild(banner);
+        setTimeout(() => { if (banner.isConnected) banner.remove(); }, 5000);
+
+        // Small universal effects that work with every existing level.
+        if (event.category === 'heal') {
+            player.health = Math.min(player.maxHealth, player.health + Math.ceil(player.maxHealth * 0.25));
+        } else if (event.category === 'boost') {
+            player.velocityX *= 1.35;
+            player.velocityY *= 0.9;
+        } else if (event.category === 'chaos' && event.name === 'Random Teleport') {
+            const spawn = levelManager.getPlayerSpawn();
+            player.x = spawn.x + Math.random() * 300;
+            player.y = spawn.y;
+        } else if (event.category === 'movement') {
+            player.velocityY *= 0.75;
+        }
+    }
+
+    networkManager.onMultiplayerEvent = showMultiplayerEvent;
 
     // Load level
     const currentLevelIndex = config.level - 1;
@@ -285,6 +319,16 @@ export function initMultiplayerGame(config) {
     game.update = function(deltaTime) {
         inputManager.updatePlayer(player);
         originalUpdate(deltaTime);
+
+        // Host creates a new synchronized event roughly every 30 seconds.
+        eventTimer += deltaTime;
+        if (config.isHost && eventTimer >= EVENT_INTERVAL) {
+            eventTimer = 0;
+            const event = getRandomMultiplayerEvent(lastEventId);
+            lastEventId = event.id;
+            networkManager.sendMultiplayerEvent(event);
+            showMultiplayerEvent(event);
+        }
 
         // Update remote players
         for (const [id, remotePlayer] of remotePlayers) {
