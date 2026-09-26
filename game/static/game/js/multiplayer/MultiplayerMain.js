@@ -41,6 +41,7 @@ import { level27 } from '../levels/level27.js';
 import { level28 } from '../levels/level28.js';
 import { level29 } from '../levels/level29.js';
 import { level30 } from '../levels/level30.js';
+import { expandedLevels } from '../levels/expandedLevels.js';
 
 import { NetworkManager } from './NetworkManager.js';
 import { RemotePlayer } from './RemotePlayer.js';
@@ -54,7 +55,8 @@ const levels = [
     level6, level7, level8, level9, level10,
     level11, level12, level13, level14, level15,
     level16, level17, level18, level19, level20,
-    level21, level22, level23, level24, level25, level26, level27, level28, level29, level30
+    level21, level22, level23, level24, level25, level26, level27, level28, level29, level30,
+    ...expandedLevels
 ];
 
 // Player slot colors
@@ -185,7 +187,7 @@ export function initMultiplayerGame(config) {
     const BOSS_STONE_LEVELS = [5,10,15,20,25,30];
     const stoneKey = 'bizarre_stones_' + config.roomCode;
     let collectedStones = JSON.parse(localStorage.getItem(stoneKey) || '[]');
-    let infinityGauntlet = collectedStones.length >= 6;
+    let infinityGauntlet = collectedStones.length >= 6 || Number(config.level || 1) >= 31;
     let gauntletCooldown = 0;
     let gauntletButton = null;
 
@@ -562,7 +564,7 @@ export function initMultiplayerGame(config) {
             // Boss arenas finish immediately when the boss/enemies are defeated.
             // Level 4 has no exit door, so requiring the player to reach an exit
             // would make the level impossible to complete.
-            const BOSS_LEVELS = [4, 5, 10, 15, 20, 25, 30];
+            const BOSS_LEVELS = [4, 5, 10, 15, 20, 25, 30, 31];
             const isBossLevel = BOSS_LEVELS.includes(Number(config.level || 1));
 
             if (aliveNow === 0 && (atExit || isBossLevel)) {
