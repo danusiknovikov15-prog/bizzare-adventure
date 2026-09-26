@@ -51,4 +51,5 @@ urlpatterns = [
     path('api/admin/coins/', views.admin_add_coins, name='admin_add_coins'),
     path('api/admin/level/', views.admin_set_level, name='admin_set_level'),
     path('api/admin/item/', views.admin_give_item, name='admin_give_item'),
+    path('api/admin/add-admin/', views.admin_add_admin, name='admin_add_admin'),
 ]
