@@ -61,7 +61,15 @@ export class LobbyUI {
             try {
                 const response = await fetch('/api/room/find/' + encodeURIComponent(this.roomCode) + '/');
                 const data = await response.json();
-                if (data.success && data.room) this.updateRoomState(data.room);
+                if (data.success && data.room) {
+                    this.updateRoomState(data.room);
+                    // If the host has started, clients who missed the WebSocket event
+                    // still get sent into the game.
+                    if (data.room.status === 'playing') {
+                        this.stopRoomPolling();
+                        window.location.href = '/multiplayer/game/' + encodeURIComponent(this.roomCode) + '/';
+                    }
+                }
             } catch (e) {
                 // WebSocket remains the primary transport; polling is only a fallback.
             }
