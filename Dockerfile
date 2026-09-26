@@ -1,28 +1,19 @@
-# Используем официальный Python образ
+# Use the official Python image
 FROM python:3.12-slim
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Устанавливаем переменные окружения
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=platformer_project.settings
 
-# Копируем файл зависимостей
 COPY requirements.txt .
-
-# Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь проект
 COPY . .
 
-# Собираем статические файлы
 RUN python manage.py collectstatic --noinput
 
-# Открываем порт 8000
-EXPOSE 8000
+EXPOSE 10000
 
-# Запускаем сервер через gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "platformer_project.wsgi:application"]
+CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:$PORT platformer_project.wsgi:application"]
