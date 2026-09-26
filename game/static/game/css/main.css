@@ -141,3 +141,14 @@ body {
         height: 100%;
     }
 }
+
+
+.mobile-controls-hidden .joystick-area,.mobile-controls-hidden .action-buttons{opacity:0;pointer-events:none}
+@media(max-width:767px){
+    .joystick-area{width:140px;height:140px;bottom:18px;left:14px}
+    .joystick-base{width:140px;height:140px}
+    .action-buttons{right:14px;bottom:18px;gap:12px}
+    .action-button{width:78px;height:78px;font-size:14px}
+    #gameCanvas{width:100vw;height:100dvh}
+    body{height:100dvh}
+}
