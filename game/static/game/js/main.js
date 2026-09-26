@@ -31,6 +31,17 @@ import { level17 } from './levels/level17.js';
 import { level18 } from './levels/level18.js';
 import { level19 } from './levels/level19.js';
 import { level20 } from './levels/level20.js';
+import { level21 } from './levels/level21.js';
+import { level22 } from './levels/level22.js';
+import { level23 } from './levels/level23.js';
+import { level24 } from './levels/level24.js';
+import { level25 } from './levels/level25.js';
+import { level26 } from './levels/level26.js';
+import { level27 } from './levels/level27.js';
+import { level28 } from './levels/level28.js';
+import { level29 } from './levels/level29.js';
+import { level30 } from './levels/level30.js';
+import { expandedLevels } from './levels/expandedLevels.js';
 
 console.log('Game loading...');
 
@@ -538,7 +549,10 @@ const levels = [
     level1, level2, level3, level4, level5,
     level6, level7, level8, level9, level10,
     level11, level12, level13, level14, level15,
-    level16, level17, level18, level19, level20
+    level16, level17, level18, level19, level20,
+    level21, level22, level23, level24, level25,
+    level26, level27, level28, level29, level30,
+    ...expandedLevels
 ];
 let showLevelSelector = false; // Level selection menu state
 let showItemSpawnMenu = false; // Item spawn menu state
