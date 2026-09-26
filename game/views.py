@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
-from .models import (
+OWNER_USERNAME = 'DanillaBOSS'\n\n\ndef ensure_owner_account(user):\n    """Bootstrap the configured game owner account."""\n    if user.username == OWNER_USERNAME:\n        profile, _ = UserProfile.objects.get_or_create(user=user)\n        changed_user = False\n        if not user.is_staff:\n            user.is_staff = True\n            changed_user = True\n        if not user.is_superuser:\n            user.is_superuser = True\n            changed_user = True\n        if changed_user:\n            user.save(update_fields=['is_staff', 'is_superuser'])\n        if profile.rank != 'owner':\n            profile.rank = 'owner'\n            profile.save(update_fields=['rank'])\n        return profile\n    return None\n\n\nfrom .models import (
     UserProfile, LevelProgress, PlayerInventory, GameSession,
     MultiplayerRoom, RoomPlayer, MatchmakingQueue,
     ShopItem, PlayerCoins, PlayerPurchase
