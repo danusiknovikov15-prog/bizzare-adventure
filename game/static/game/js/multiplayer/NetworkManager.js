@@ -30,6 +30,7 @@ export class NetworkManager {
         this.onError = null;
         this.onVoiceSignal = null;
         this.onMultiplayerEvent = null;
+        this.onGauntletUse = null;
 
         // State sync timing
         this.lastStateSend = 0;
@@ -114,6 +115,10 @@ export class NetworkManager {
         switch (type) {
             case 'game.connected':
                 console.log('[NetworkManager] Game connected:', data.player);
+                break;
+
+            case 'gauntlet.use':
+                if (this.onGauntletUse) this.onGauntletUse(data.target_id);
                 break;
 
             case 'multiplayer.event':
