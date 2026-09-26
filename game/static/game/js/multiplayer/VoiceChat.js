@@ -1,6 +1,6 @@
 export class VoiceChat {
-    constructor(socket, localPlayerId) {
-        this.socket = socket;
+    constructor(networkManager, localPlayerId) {
+        this.networkManager = networkManager;
         this.localPlayerId = Number(localPlayerId);
         this.peers = new Map();
         this.localStream = null;
@@ -76,13 +76,7 @@ export class VoiceChat {
     }
 
     signal(targetPlayerId, signal) {
-        if (this.socket?.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                type: 'voice.signal',
-                target_player_id: Number(targetPlayerId),
-                signal
-            }));
-        }
+        this.networkManager?.send('voice.signal', { target_player_id: Number(targetPlayerId), signal });
     }
 
     async handleSignal(senderId, signal) {
