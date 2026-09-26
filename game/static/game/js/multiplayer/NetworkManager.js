@@ -91,9 +91,7 @@ export class NetworkManager {
             }
         };
 
-        this.socket.onmessage = (event) => {
-            this.handleMessage(JSON.parse(event.data));
-        };
+        this.socket.onmessage = (event) => { try { this.handleMessage(JSON.parse(event.data)); } catch (e) { console.error('[NetworkManager] Invalid message', e); } };
     }
 
     /**
@@ -166,7 +164,7 @@ export class NetworkManager {
 
             case 'level.complete':
                 if (this.onLevelComplete) {
-                    this.onLevelComplete();
+                    this.onLevelComplete(data.next_level, data.finished);
                 }
                 break;
 
