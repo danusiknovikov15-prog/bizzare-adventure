@@ -41,8 +41,8 @@ class UserProfile(models.Model):
         return self.rank in ['admin', 'owner']
 
     def can_manage_admins(self):
-        """Only owners can promote/demote admins"""
-        return self.rank == 'owner'
+        """Admins and the owner can promote other players to admin."""
+        return self.rank in ['admin', 'owner']
 
     def can_give_coins(self):
         """Owners and admins can give coins"""
