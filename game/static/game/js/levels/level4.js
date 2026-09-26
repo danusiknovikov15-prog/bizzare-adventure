@@ -40,6 +40,13 @@ export const level4 = {
         maxY: 600
     },
 
+    // Portal to Level 5 — appears after the boss fight is cleared.
+    // Placed at the right side of the arena so the player can walk into it.
+    door: {
+        x: 1100,
+        y: 470
+    },
+
     // Boss placement (one boss in the center) + Zombie Archers
     enemies: [
         { x: 540, y: 350, isBoss: true },  // Boss on center platform (y: 500 - 150 = 350)
