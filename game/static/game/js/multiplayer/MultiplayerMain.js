@@ -31,6 +31,16 @@ import { level17 } from '../levels/level17.js';
 import { level18 } from '../levels/level18.js';
 import { level19 } from '../levels/level19.js';
 import { level20 } from '../levels/level20.js';
+import { level21 } from '../levels/level21.js';
+import { level22 } from '../levels/level22.js';
+import { level23 } from '../levels/level23.js';
+import { level24 } from '../levels/level24.js';
+import { level25 } from '../levels/level25.js';
+import { level26 } from '../levels/level26.js';
+import { level27 } from '../levels/level27.js';
+import { level28 } from '../levels/level28.js';
+import { level29 } from '../levels/level29.js';
+import { level30 } from '../levels/level30.js';
 
 import { NetworkManager } from './NetworkManager.js';
 import { RemotePlayer } from './RemotePlayer.js';
@@ -43,7 +53,8 @@ const levels = [
     level1, level2, level3, level4, level5,
     level6, level7, level8, level9, level10,
     level11, level12, level13, level14, level15,
-    level16, level17, level18, level19, level20
+    level16, level17, level18, level19, level20,
+    level21, level22, level23, level24, level25, level26, level27, level28, level29, level30
 ];
 
 // Player slot colors
@@ -151,6 +162,18 @@ export function initMultiplayerGame(config) {
         else voiceChat.toggleMute();
     };
     const stateSync = new StateSync(networkManager, config.isHost);
+    networkManager.onLevelComplete = (nextLevel, finished) => {
+        if (finished) {
+            const banner = document.createElement('div');
+            banner.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;color:#ffd700;font:900 42px Arial;text-align:center;';
+            banner.textContent = 'STORY COMPLETE! 🎉';
+            document.body.appendChild(banner);
+            return;
+        }
+        const box = document.getElementById('storyDialog');
+        if (box) box.remove();
+        setTimeout(() => { window.location.href = '/multiplayer/game/' + encodeURIComponent(config.roomCode) + '/'; }, 900);
+    };
 
     // Remote players map
     const remotePlayers = new Map();
@@ -189,8 +212,47 @@ export function initMultiplayerGame(config) {
     networkManager.onMultiplayerEvent = showMultiplayerEvent;
 
     // Load level
-    const currentLevelIndex = config.level - 1;
+    const currentLevelIndex = Math.max(0, Math.min(levels.length - 1, Number(config.level || 1) - 1));
     const levelInfo = levelManager.loadLevel(levels[currentLevelIndex]);
+
+    let storyDialogOpen = false;
+    let storyDialogIndex = 0;
+    const storyScenes = {
+        1: [['NOVA','The portal has opened. We face the unknown together.'],['NOVA','Stay close. Nobody gets left behind.']],
+        5: [['UNKNOWN','You have made it farther than expected...'],['NOVA','Then we keep going.']],
+        10: [['THE WARDEN','Half the path is broken. Turn back now.'],['NOVA','No. We finish this together.']],
+        15: [['UNKNOWN','The final gates are waking up.'],['NOVA','Everyone ready? This is where our story changes.']],
+        21: [['NOVA','We crossed the old boundary. These ruins are still alive.'],['UNKNOWN','Ten more trials await you.']],
+        25: [['THE WARDEN','You are close to the Crystal Gate.'],['NOVA','Then we break through together.']],
+        30: [['THE WARDEN','This is the Last Gate.'],['NOVA','Together. One final fight.']]
+    };
+    function showStoryDialog(levelNumber = config.level) {
+        if (config.mode !== 'story') return;
+        const scene = storyScenes[levelNumber] || [['NOVA','Level ' + levelNumber + '. Keep moving.'],['NOVA','The next chapter is waiting.']];
+        storyDialogOpen = true;
+        storyDialogIndex = 0;
+        let box = document.getElementById('storyDialog');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'storyDialog';
+            box.innerHTML = '<div id="storySpeaker"></div><div id="storyText"></div><button id="storyNext">NEXT ▶</button>';
+            document.body.appendChild(box);
+            const style = document.createElement('style');
+            style.textContent = '#storyDialog{position:fixed;left:50%;bottom:7%;transform:translateX(-50%);z-index:500;width:min(720px,88vw);padding:18px 20px;background:rgba(8,8,18,.96);border:2px solid #7c5cff;border-radius:16px;color:#fff;box-shadow:0 10px 50px rgba(0,0,0,.6);font:16px Arial}#storySpeaker{font-weight:900;color:#bda9ff;margin-bottom:8px}#storyText{min-height:42px;line-height:1.45}#storyNext{margin-top:12px;padding:9px 16px;border:0;border-radius:8px;background:#7c5cff;color:#fff;font-weight:800;cursor:pointer}';
+            document.head.appendChild(style);
+            box.querySelector('#storyNext').onclick = () => {
+                storyDialogIndex++;
+                if (storyDialogIndex >= scene.length) { storyDialogOpen = false; box.remove(); }
+                else renderStoryLine();
+            };
+        }
+        function renderStoryLine() {
+            box.querySelector('#storySpeaker').textContent = scene[storyDialogIndex][0];
+            box.querySelector('#storyText').textContent = scene[storyDialogIndex][1];
+        }
+        renderStoryLine();
+    }
+    showStoryDialog();
 
     const bgColor = loadCastleBackground(game, currentLevelIndex);
     if (bgColor) {
@@ -319,6 +381,7 @@ export function initMultiplayerGame(config) {
 
     // State sync counter
     let syncCounter = 0;
+    let levelCompleteSent = false;
 
     // Override update
     const originalUpdate = game.update.bind(game);
@@ -406,6 +469,15 @@ export function initMultiplayerGame(config) {
         levelManager.cleanupCollectedEliteSwords();
         levelManager.cleanupCollectedTotems();
         levelManager.cleanupCollectedUnoCards();
+
+        if (config.isHost && !levelCompleteSent) {
+            const aliveNow = levelManager.getEnemies().filter(e => e.isAlive).length;
+            const atExit = levelManager.checkDoorEntry(player) || levelManager.checkGoalReached(player);
+            if (aliveNow === 0 && atExit) {
+                levelCompleteSent = true;
+                networkManager.sendLevelComplete();
+            }
+        }
 
         // Camera
         game.renderer.followTarget(player, game.canvas);
