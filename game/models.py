@@ -190,6 +190,7 @@ class MatchmakingQueue(models.Model):
         ('escort', 'Escort'),
         ('treasure', 'Treasure Hunt'),
         ('infection', 'Infection'),
+        ('story', 'Story Mode'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='matchmaking')
