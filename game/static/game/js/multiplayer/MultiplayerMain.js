@@ -37,6 +37,7 @@ import { RemotePlayer } from './RemotePlayer.js';
 import { StateSync } from './StateSync.js';
 import { VoiceChat } from './VoiceChat.js';
 import { getRandomMultiplayerEvent } from './MultiplayerEvents.js';
+import { getMultiplayerMode } from './MultiplayerModes.js';
 
 const levels = [
     level1, level2, level3, level4, level5,
@@ -125,11 +126,16 @@ function loadCastleBackground(game, levelIndex) {
 
 export function initMultiplayerGame(config) {
     console.log('[Multiplayer] Initializing with config:', config);
+    const modeInfo = getMultiplayerMode(config.mode);
 
     const game = new Game('gameCanvas');
     window.game = game;
 
     // Initialize systems
+    const modeBanner = document.createElement('div');
+    modeBanner.id = 'multiplayerModeBanner';
+    modeBanner.innerHTML = modeInfo.icon + ' <b>' + modeInfo.name + '</b><small>' + modeInfo.objective + '</small>';
+    document.body.appendChild(modeBanner);
     game.physics = new Physics(800);
     game.renderer = new Renderer(game.canvas, game.ctx);
     const combatSystem = new CombatSystem();
