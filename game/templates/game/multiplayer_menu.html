@@ -234,6 +234,15 @@
             margin-bottom: 15px;
             display: none;
         }
+    
+        .trade-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px; }
+        .trade-grid label { display:block; color:#aaa; margin-bottom:6px; font-size:.9em; }
+        .trade-grid select, .trade-grid input { width:100%; box-sizing:border-box; padding:10px; margin-bottom:8px; border-radius:7px; border:1px solid rgba(255,255,255,.2); background:#111827; color:#fff; }
+        .trade-status { min-height:22px; margin:8px 0; text-align:center; }
+        .trade-offer { background:rgba(0,0,0,.3); border-radius:8px; padding:10px; margin-top:8px; }
+        .trade-offer button { margin-left:6px; padding:6px 9px; border:0; border-radius:5px; cursor:pointer; }
+        @media (max-width:600px) { .trade-grid { grid-template-columns:1fr; gap:5px; } .multiplayer-container { padding:20px 12px; } .menu-section { padding:18px; } .btn { width:100%; margin:5px 0; } .mode-buttons { flex-direction:column; gap:4px; } .input-group { flex-direction:column; } .input-group .btn { width:100%; } }
+
     </style>
 </head>
 <body>
@@ -305,6 +314,31 @@
                     Find PvP Game
                 </button>
             </div>
+        </div>
+
+
+        <!-- Trading -->
+        <div class="menu-section trade-section">
+            <h2 class="section-title">🔄 Player Trading</h2>
+            <p style="color:#aaa;margin-top:-10px;">Trade items with another player. Both players must own the requested items.</p>
+            <div class="trade-grid">
+                <div>
+                    <label>Your item</label>
+                    <select id="tradeOfferItem"></select>
+                    <input id="tradeOfferQty" type="number" min="1" value="1" placeholder="Quantity">
+                </div>
+                <div>
+                    <label>Other player's item</label>
+                    <select id="tradeRequestItem"></select>
+                    <input id="tradeRequestQty" type="number" min="1" value="1" placeholder="Quantity">
+                </div>
+            </div>
+            <div class="input-group">
+                <input id="tradeUsername" type="text" placeholder="Username to trade with">
+                <button class="btn btn-primary" onclick="sendTradeOffer()">Send Trade</button>
+            </div>
+            <div id="tradeStatus" class="trade-status"></div>
+            <div id="tradeIncoming"></div>
         </div>
 
         <a href="{% url 'game:index' %}" class="back-link">← Back to Menu</a>
@@ -479,6 +513,97 @@
             showError('Matchmaking is coming soon!');
             // TODO: Implement matchmaking WebSocket connection
         }
+
+
+        async function tradeFetch(url, options = {}) {
+            const response = await fetch(url, options);
+            return await response.json();
+        }
+
+        function tradeStatus(message, error = false) {
+            const el = document.getElementById('tradeStatus');
+            el.textContent = message;
+            el.style.color = error ? '#ff7777' : '#70ff9a';
+        }
+
+        async function loadTradeInventory() {
+            try {
+                const data = await tradeFetch('/api/trades/inventory/');
+                if (!data.success) return;
+                const selects = [document.getElementById('tradeOfferItem'), document.getElementById('tradeRequestItem')];
+                selects.forEach((select, index) => {
+                    select.innerHTML = '';
+                    data.items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify({type:item.type,id:item.id});
+                        option.textContent = item.id + ' ×' + item.quantity;
+                        select.appendChild(option);
+                    });
+                    if (!data.items.length) {
+                        select.innerHTML = '<option value="">No items in inventory</option>';
+                    }
+                });
+            } catch (e) {
+                tradeStatus('Could not load inventory', true);
+            }
+        }
+
+        async function sendTradeOffer() {
+            const username = document.getElementById('tradeUsername').value.trim();
+            const offered = document.getElementById('tradeOfferItem').value;
+            const requested = document.getElementById('tradeRequestItem').value;
+            if (!username || !offered || !requested) {
+                tradeStatus('Choose a player and both items first.', true);
+                return;
+            }
+            const a = JSON.parse(offered), b = JSON.parse(requested);
+            const data = await tradeFetch('/api/trades/create/', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    username,
+                    offered_item_type:a.type, offered_item_id:a.id,
+                    offered_quantity:parseInt(document.getElementById('tradeOfferQty').value) || 1,
+                    requested_item_type:b.type, requested_item_id:b.id,
+                    requested_quantity:parseInt(document.getElementById('tradeRequestQty').value) || 1
+                })
+            });
+            tradeStatus(data.success ? '✅ Trade offer sent!' : '❌ ' + data.error, !data.success);
+            loadTradeOffers();
+        }
+
+        async function tradeAction(id, action) {
+            const data = await tradeFetch('/api/trades/' + id + '/' + action + '/', {method:'POST'});
+            tradeStatus(data.success ? 'Trade updated.' : '❌ ' + data.error, !data.success);
+            loadTradeOffers();
+            loadTradeInventory();
+        }
+
+        async function loadTradeOffers() {
+            try {
+                const data = await tradeFetch('/api/trades/');
+                const box = document.getElementById('tradeIncoming');
+                if (!data.success) return;
+                box.innerHTML = '<h3 style="margin-bottom:8px;">Incoming offers</h3>';
+                if (!data.incoming.length) {
+                    box.innerHTML += '<div style="color:#888;">No pending offers.</div>';
+                } else {
+                    data.incoming.forEach(o => {
+                        const row = document.createElement('div');
+                        row.className = 'trade-offer';
+                        row.innerHTML = '<b>' + o.from + '</b> offers <b>' + o.offered.id + ' ×' + o.offered.quantity +
+                            '</b> for your <b>' + o.requested.id + ' ×' + o.requested.quantity +
+                            '</b> <button onclick="tradeAction(' + o.id + ',\'accept\')">Accept</button>' +
+                            '<button onclick="tradeAction(' + o.id + ',\'reject\')">Reject</button>';
+                        box.appendChild(row);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        loadTradeInventory();
+        loadTradeOffers();
+        setInterval(loadTradeOffers, 3000);
 
         // Enter key support
         document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
