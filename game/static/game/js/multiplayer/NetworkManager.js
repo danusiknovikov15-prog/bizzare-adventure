@@ -28,6 +28,7 @@ export class NetworkManager {
         this.onPlayerLeft = null;
         this.onPlayerDisconnected = null;
         this.onError = null;
+        this.onVoiceSignal = null;
 
         // State sync timing
         this.lastStateSend = 0;
@@ -114,6 +115,12 @@ export class NetworkManager {
         switch (type) {
             case 'game.connected':
                 console.log('[NetworkManager] Game connected:', data.player);
+                break;
+
+            case 'voice.signal':
+                if (this.onVoiceSignal) {
+                    this.onVoiceSignal(data.sender_id, data.signal);
+                }
                 break;
 
             case 'player.state':
