@@ -558,7 +558,14 @@ export function initMultiplayerGame(config) {
         if (config.isHost && !levelCompleteSent) {
             const aliveNow = levelManager.getEnemies().filter(e => e.isAlive).length;
             const atExit = levelManager.checkDoorEntry(player) || levelManager.checkGoalReached(player);
-            if (aliveNow === 0 && atExit) {
+
+            // Boss arenas finish immediately when the boss/enemies are defeated.
+            // Level 4 has no exit door, so requiring the player to reach an exit
+            // would make the level impossible to complete.
+            const BOSS_LEVELS = [4, 5, 10, 15, 20, 25, 30];
+            const isBossLevel = BOSS_LEVELS.includes(Number(config.level || 1));
+
+            if (aliveNow === 0 && (atExit || isBossLevel)) {
                 levelCompleteSent = true;
                 networkManager.sendLevelComplete();
             }
