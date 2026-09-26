@@ -385,22 +385,40 @@
             try {
                 const response = await fetch('/api/room/create/', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ mode, level: 1 })
+                    body: JSON.stringify({ mode: mode, level: 1 })
                 });
-                const data = await response.json();
+
+                // Django can return an HTML error/login page instead of JSON.
+                // Read the body first so the user gets the real HTTP error.
+                const raw = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch (_) {
+                    const preview = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+                    throw new Error(`HTTP ${response.status} - Server returned HTML instead of JSON${preview ? ': ' + preview : ''}`);
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
 
                 if (data.success) {
-                    window.location.href = `/multiplayer/lobby/${data.room_code}/`;
+                    window.location.href = `/multiplayer/lobby/${encodeURIComponent(data.room_code)}/`;
                 } else {
                     showError(data.error || 'Failed to create room');
                 }
             } catch (e) {
-                showError('Network error: ' + e.message);
+                console.error('[Multiplayer] createRoom failed:', e);
+                showError(e.message || 'Network error');
+            } finally {
+                showLoading(false);
             }
-            showLoading(false);
         }
 
         async function joinByCode() {
