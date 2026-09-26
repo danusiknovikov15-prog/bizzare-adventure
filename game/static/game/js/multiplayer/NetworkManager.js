@@ -29,6 +29,7 @@ export class NetworkManager {
         this.onPlayerDisconnected = null;
         this.onError = null;
         this.onVoiceSignal = null;
+        this.onMultiplayerEvent = null;
 
         // State sync timing
         this.lastStateSend = 0;
@@ -117,6 +118,10 @@ export class NetworkManager {
                 console.log('[NetworkManager] Game connected:', data.player);
                 break;
 
+            case 'multiplayer.event':
+                if (this.onMultiplayerEvent) this.onMultiplayerEvent(data.event);
+                break;
+
             case 'voice.signal':
                 if (this.onVoiceSignal) {
                     this.onVoiceSignal(data.sender_id, data.signal);
@@ -192,6 +197,10 @@ export class NetworkManager {
             default:
                 console.log('[NetworkManager] Unknown message type:', type, data);
         }
+    }
+
+    sendMultiplayerEvent(event) {
+        this.send('multiplayer.event', { event });
     }
 
     /**
