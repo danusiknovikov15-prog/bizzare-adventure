@@ -134,6 +134,8 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                     remaining.save()
                 else:
                     room.delete()
+            if room.players.exists():
+                await self.broadcast_room_update()
         except RoomPlayer.DoesNotExist:
             pass
 
