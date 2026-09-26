@@ -11,6 +11,7 @@ import { EntityManager } from '../systems/EntityManager.js';
 import { ElementalShard } from '../entities/ElementalShard.js';
 import { TotemOfUndying } from '../entities/TotemOfUndying.js';
 import { UnoReverseCard } from '../entities/UnoReverseCard.js';
+import { InfinityGauntletStand } from '../entities/InfinityGauntletStand.js';
 
 // Import specialized bosses
 import { AcidBoss } from '../entities/bosses/AcidBoss.js';
@@ -26,6 +27,7 @@ export class LevelManager {
         this.currentLevel = null;
         this.levelData = null;
         this.door = null; // Track level exit door
+        this.gauntletStand = null;
 
         // New systems for entity and item management
         this.itemFactory = new ItemFactory();
@@ -141,6 +143,17 @@ export class LevelManager {
             console.log(`Spawned ${levelData.enemies.length} enemies`);
         } else {
             this.initialEnemyCount = 0;
+        }
+
+        // Create the Infinity Gauntlet stand when a level defines one.
+        this.gauntletStand = null;
+        if (levelData.gauntletStand) {
+            this.gauntletStand = new InfinityGauntletStand(
+                levelData.gauntletStand.x,
+                levelData.gauntletStand.y
+            );
+            this.game.addEntity(this.gauntletStand);
+            console.log('⚡ Infinity Gauntlet stand created');
         }
 
         // Create door if specified in level data
@@ -466,6 +479,11 @@ export class LevelManager {
         return this.entityManager.cleanupAllCollected();
     }
 
+
+    // Get Infinity Gauntlet stand
+    getGauntletStand() {
+        return this.gauntletStand;
+    }
 
     // Get door
     getDoor() {
