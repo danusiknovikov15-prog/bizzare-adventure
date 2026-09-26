@@ -509,9 +509,22 @@
             showLoading(false);
         }
 
-        function quickMatch(mode) {
-            showError('Matchmaking is coming soon!');
-            // TODO: Implement matchmaking WebSocket connection
+        async function quickMatch(mode) {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/room/quick-match/', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({mode})
+                });
+                const data = await response.json();
+                if (data.success) window.location.href = '/multiplayer/lobby/' + data.room_code + '/';
+                else showError(data.error || 'Quick Match failed');
+            } catch(e) {
+                showError('Network error: ' + e.message);
+            } finally {
+                showLoading(false);
+            }
         }
 
 
