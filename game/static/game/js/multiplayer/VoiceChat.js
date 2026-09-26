@@ -7,7 +7,8 @@ export class VoiceChat {
         this.muted = false;
         this.enabled = false;
         this.remoteAudio = new Map();
-        this.iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+        this.pendingCandidates = new Map();
+        this.iceServers = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
     }
 
     async start() {
@@ -59,6 +60,7 @@ export class VoiceChat {
                 audio = document.createElement('audio');
                 audio.autoplay = true;
                 audio.playsInline = true;
+                audio.controls = false;
                 audio.dataset.voicePlayer = playerId;
                 document.body.appendChild(audio);
                 this.remoteAudio.set(playerId, audio);
@@ -87,16 +89,27 @@ export class VoiceChat {
         if (signal.type === 'offer') {
             if (!pc) pc = this.createPeer(senderId);
             await pc.setRemoteDescription(signal.sdp);
+            await this.flushCandidates(senderId, pc);
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             this.signal(senderId, { type: 'answer', sdp: pc.localDescription });
         } else if (signal.type === 'answer') {
             if (pc) await pc.setRemoteDescription(signal.sdp);
         } else if (signal.type === 'candidate') {
-            if (pc) {
+            if (pc && pc.remoteDescription) {
                 try { await pc.addIceCandidate(signal.candidate); } catch (e) {}
+            } else {
+                const queue = this.pendingCandidates.get(senderId) || [];
+                queue.push(signal.candidate);
+                this.pendingCandidates.set(senderId, queue);
             }
         }
+    }
+
+    async flushCandidates(playerId, pc) {
+        const queue = this.pendingCandidates.get(Number(playerId)) || [];
+        for (const candidate of queue) { try { await pc.addIceCandidate(candidate); } catch (e) {} }
+        this.pendingCandidates.delete(Number(playerId));
     }
 
     toggleMute() {
