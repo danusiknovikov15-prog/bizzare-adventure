@@ -35,6 +35,7 @@ import { level20 } from '../levels/level20.js';
 import { NetworkManager } from './NetworkManager.js';
 import { RemotePlayer } from './RemotePlayer.js';
 import { StateSync } from './StateSync.js';
+import { VoiceChat } from './VoiceChat.js';
 
 const levels = [
     level1, level2, level3, level4, level5,
@@ -135,6 +136,13 @@ export function initMultiplayerGame(config) {
 
     // Network manager
     const networkManager = new NetworkManager();
+    const voiceChat = new VoiceChat(networkManager, config.playerId);
+    networkManager.onVoiceSignal = (senderId, signal) => voiceChat.handleSignal(senderId, signal);
+    const voiceButton = document.getElementById('voiceChatBtn');
+    if (voiceButton) voiceButton.onclick = async () => {
+        if (!voiceChat.enabled) await voiceChat.start();
+        else voiceChat.toggleMute();
+    };
     const stateSync = new StateSync(networkManager, config.isHost);
 
     // Remote players map
@@ -191,8 +199,10 @@ export function initMultiplayerGame(config) {
             );
             remotePlayers.set(playerId, remotePlayer);
             console.log(`[Multiplayer] New remote player: ${playerId}`);
+            voiceChat.connectToPlayer(playerId).catch(() => {});
         }
         remotePlayer.applyNetworkState(state);
+        if (voiceChat.enabled) voiceChat.connectToPlayer(playerId).catch(() => {});
     };
 
     // Enemy state sync for non-host
@@ -484,6 +494,7 @@ export function initMultiplayerGame(config) {
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
+        voiceChat.stop();
         networkManager.disconnect();
     });
 
