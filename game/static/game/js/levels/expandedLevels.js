@@ -24,6 +24,7 @@ function makeLevel(number) {
     {x:Math.max(1680,width-260),y:360,width:240,height:30,color:accent}
   ];
   const enemies = [];
+  const gauntletStand = number === 31 ? {x: width - 120, y: 270} : null;
   const count = 4 + (number % 5);
   for (let i=0;i<count;i++) {
     const x = 500 + ((number * 97 + i * 211) % Math.max(700,width-700));
