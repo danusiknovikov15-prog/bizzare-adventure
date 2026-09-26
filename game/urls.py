@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/room/find/<str:code>/', views.find_room, name='find_room'),
     path('api/room/find-by-user/<str:username>/', views.find_room_by_user, name='find_room_by_user'),
     path('api/rooms/', views.list_public_rooms, name='list_public_rooms'),
+    path('api/room/quick-match/', views.quick_match, name='quick_match'),
 
     # Shop API
     path('api/shop/data/', views.shop_data, name='shop_data'),
