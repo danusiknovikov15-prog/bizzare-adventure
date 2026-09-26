@@ -126,6 +126,7 @@ class MultiplayerRoom(models.Model):
         ('escort', 'Escort'),
         ('treasure', 'Treasure Hunt'),
         ('infection', 'Infection'),
+        ('story', 'Story Mode'),
     ]
     STATUS_CHOICES = [
         ('waiting', 'Waiting'),
