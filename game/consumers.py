@@ -365,6 +365,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        elif message_type == 'gauntlet.use':
+            if await self.check_is_host():
+                await self.channel_layer.group_send(self.game_group_name, {'type':'gauntlet_use','target_id':data.get('target_id')})
         elif message_type == 'multiplayer.event':
             # Only the host is allowed to author synchronized random events.
             if await self.check_is_host():
@@ -497,6 +500,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             return False
 
     # Event handlers
+
+    async def gauntlet_use(self, event):
+        await self.send(text_data=json.dumps({'type':'gauntlet.use','target_id':event.get('target_id')}))
 
     async def multiplayer_event(self, event):
         await self.send(text_data=json.dumps({
