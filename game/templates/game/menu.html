@@ -45,6 +45,11 @@
             <hr style="border-color: #ff0044; margin: 10px 0;">
             <button onclick="adminGiveItem('lightsaber')" style="width: 100%; margin: 3px 0; padding: 8px; background: #1a2a3a; border: 1px solid #7df9ff; color: #7df9ff; border-radius: 5px; cursor: pointer;">🔦 Lightsaber</button>
             <button onclick="adminGiveCoins(10000)" style="width: 100%; margin: 3px 0; padding: 8px; background: #3a3a1a; border: 1px solid #ffd700; color: #ffd700; border-radius: 5px; cursor: pointer;">💰 +10,000 Coins</button>
+            <hr style="border-color: #ff0044; margin: 10px 0;">
+            <p style="color: #ff0044; margin: 0 0 8px 0; font-weight: bold; text-align: center;">Manage Admins</p>
+            <input id="new-admin-username" type="text" maxlength="30" placeholder="Username to make admin" style="box-sizing:border-box; width:100%; margin:3px 0; padding:8px; background:#11111a; border:1px solid #ff0044; color:white; border-radius:5px;">
+            <button onclick="adminAddAdmin()" style="width:100%; margin:3px 0; padding:8px; background:linear-gradient(180deg,#5a1030,#2a0718); border:1px solid #ff0044; color:#fff; border-radius:5px; cursor:pointer;">👑 Make Admin</button>
+            <div id="admin-manage-message" style="font-size:11px; color:#aaa; text-align:center; margin-top:6px;"></div>
         </div>
     </div>
     {% endif %}
@@ -659,6 +664,44 @@
             } catch (error) {
                 console.error('Admin give error:', error);
                 alert('❌ Error giving item');
+            }
+        }
+
+        async function adminAddAdmin() {
+            const input = document.getElementById('new-admin-username');
+            const message = document.getElementById('admin-manage-message');
+            const username = input.value.trim();
+
+            if (!username) {
+                message.textContent = 'Enter a username first.';
+                message.style.color = '#ff8888';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/add-admin/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ username: username })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    message.textContent = '✅ ' + data.username + ' is now an admin!';
+                    message.style.color = '#66ff99';
+                    input.value = '';
+                } else {
+                    message.textContent = '❌ ' + (data.error || 'Failed to add admin');
+                    message.style.color = '#ff8888';
+                }
+            } catch (error) {
+                console.error('Admin promotion error:', error);
+                message.textContent = '❌ Network error';
+                message.style.color = '#ff8888';
             }
         }
 
