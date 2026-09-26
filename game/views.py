@@ -79,7 +79,7 @@ def game(request):
     profile, created = UserProfile.objects.get_or_create(user=request.user)
     return render(request, 'game/game.html', {
         'profile': profile,
-        'level_range': range(1, 21),  # Levels 1-20
+        'level_range': range(1, 31),  # Levels 1-30
     })
 
 
