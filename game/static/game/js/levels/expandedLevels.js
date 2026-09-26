@@ -38,6 +38,7 @@ function makeLevel(number) {
     platforms,
     bounds:{minX:0,maxX:width,minY:0,maxY:600},
     door:{x:width-100,y:470},
+    gauntletStand,
     goal:{x:width-190,y:420,width:170,height:100},
     enemies
   };
