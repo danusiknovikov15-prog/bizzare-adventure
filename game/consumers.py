@@ -183,8 +183,8 @@ class LobbyConsumer(AsyncWebsocketConsumer):
             if not player.is_host:
                 return False
 
-            all_ready = all(p.is_ready or p.is_host for p in room.players.all())
-            if not all_ready:
+            # Host controls launch; READY is optional.
+            if not room.players.exists():
                 return False
 
             room.status = 'playing'
