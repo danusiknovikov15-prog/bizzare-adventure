@@ -187,7 +187,7 @@ export function initMultiplayerGame(config) {
     const BOSS_STONE_LEVELS = [5,10,15,20,25,30];
     const stoneKey = 'bizarre_stones_' + config.roomCode;
     let collectedStones = JSON.parse(localStorage.getItem(stoneKey) || '[]');
-    let infinityGauntlet = collectedStones.length >= 6 || Number(config.level || 1) >= 31 || localStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true' || localStorage.getItem('bizarre_infinity_gauntlet') === 'true';
+    let infinityGauntlet = collectedStones.length >= 6 || localStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true' || localStorage.getItem('bizarre_infinity_gauntlet') === 'true';
     let gauntletCooldown = 0;
     let gauntletButton = null;
 
@@ -542,6 +542,25 @@ export function initMultiplayerGame(config) {
         }
 
         combatSystem.update(player, enemies, potions, armors, swords, enemySwords, slingshots, eliteArmors, eliteSwords, [], totems, unoCards, deltaTime);
+
+        // Level 31 has the Infinity Gauntlet physically displayed on its stand.
+        // Walk up to the stand to claim it.
+        if (Number(config.level || 1) === 31 && !infinityGauntlet) {
+            const stand = levelManager.getGauntletStand();
+            if (stand && !stand.isCollected) {
+                const distance = Math.hypot(
+                    (player.x + player.width / 2) - (stand.x + stand.width / 2),
+                    (player.y + player.height / 2) - (stand.y + stand.height / 2)
+                );
+                if (distance < 120) {
+                    stand.collect();
+                    infinityGauntlet = true;
+                    localStorage.setItem('bizarre_infinity_gauntlet', 'true');
+                    updateStoneHUD();
+                    playGauntletCutscene();
+                }
+            }
+        }
 
         // Cleanup
         if (config.isHost) {
