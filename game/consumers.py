@@ -153,9 +153,9 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                 return False
 
             # Check if all players are ready
-            all_ready = all(p.is_ready or p.is_host for p in room.players.all())
-            if not all_ready:
-                return False
+            # The host controls the launch. Everyone currently in the room is sent in together.
+            # Players do not have to press READY first.
+            all_ready = True
 
             room.status = 'playing'
             room.save()
