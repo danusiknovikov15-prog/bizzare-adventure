@@ -297,10 +297,8 @@
                     <div class="setting-row">
                         <span class="setting-label">Level</span>
                         <select id="levelSelect" {% if not is_host %}disabled{% endif %}>
-                            {% for i in "123456789012345678901234567890"|make_list %}
-                            {% with level=forloop.counter %}
+                            {% for level in level_range %}
                             <option value="{{ level }}" {% if room.level_number == level %}selected{% endif %}>Level {{ level }}</option>
-                            {% endwith %}
                             {% endfor %}
                         </select>
                     </div>
