@@ -186,6 +186,34 @@ class MatchmakingQueue(models.Model):
         return f"{self.user.username} queued for {self.mode}"
 
 
+class TradeOffer(models.Model):
+    """Player-to-player item trade offer."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trade_offers_sent')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trade_offers_received')
+    offered_item_type = models.CharField(max_length=50)
+    offered_item_id = models.CharField(max_length=100)
+    offered_quantity = models.PositiveIntegerField(default=1)
+    requested_item_type = models.CharField(max_length=50)
+    requested_item_id = models.CharField(max_length=100)
+    requested_quantity = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.recipient.username}: {self.offered_item_id} for {self.requested_item_id}"
+
+
 # Shop Models
 class ShopItem(models.Model):
     """Items available in the shop"""
