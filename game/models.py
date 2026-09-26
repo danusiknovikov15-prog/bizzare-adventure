@@ -118,6 +118,14 @@ class MultiplayerRoom(models.Model):
     MODE_CHOICES = [
         ('coop', 'Co-op'),
         ('pvp', 'PvP'),
+        ('survival', 'Survival'),
+        ('bossrush', 'Boss Rush'),
+        ('race', 'Race'),
+        ('kinghill', 'King of the Hill'),
+        ('capture', 'Capture Point'),
+        ('escort', 'Escort'),
+        ('treasure', 'Treasure Hunt'),
+        ('infection', 'Infection'),
     ]
     STATUS_CHOICES = [
         ('waiting', 'Waiting'),
@@ -173,6 +181,14 @@ class MatchmakingQueue(models.Model):
     MODE_CHOICES = [
         ('coop', 'Co-op'),
         ('pvp', 'PvP'),
+        ('survival', 'Survival'),
+        ('bossrush', 'Boss Rush'),
+        ('race', 'Race'),
+        ('kinghill', 'King of the Hill'),
+        ('capture', 'Capture Point'),
+        ('escort', 'Escort'),
+        ('treasure', 'Treasure Hunt'),
+        ('infection', 'Infection'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='matchmaking')
