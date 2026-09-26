@@ -265,7 +265,7 @@ export class LobbyUI {
 
         // Check if all non-host players are ready
         const nonHostPlayers = this.players.filter(p => !p.is_host);
-        const allReady = nonHostPlayers.length > 0 && nonHostPlayers.every(p => p.is_ready);
+        const allReady = nonHostPlayers.every(p => p.is_ready);
 
         btn.disabled = !allReady;
         btn.textContent = allReady ? 'START GAME' : 'Waiting for players...';
