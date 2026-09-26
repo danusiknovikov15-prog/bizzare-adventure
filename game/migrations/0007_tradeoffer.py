@@ -1,11 +1,12 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
+from django.conf import settings
 
 class Migration(migrations.Migration):
     dependencies = [
         ('game', '0006_add_equipped_title'),
-        migrations.swappable_dependency('auth', '0001_initial'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
     operations = [
         migrations.CreateModel(
