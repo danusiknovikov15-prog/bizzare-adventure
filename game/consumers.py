@@ -454,7 +454,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     def advance_room_level(self):
         try:
             room = MultiplayerRoom.objects.get(code=self.room_code)
-            if room.level_number >= 30:
+            if room.level_number >= 330:
                 room.status = 'finished'
                 room.save(update_fields=['status', 'updated_at'])
                 return room.level_number, True
