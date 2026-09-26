@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/shop/equip/', views.shop_equip, name='shop_equip'),
 
     # Trading API
+    path('api/trades/inventory/', views.trade_inventory, name='trade_inventory'),
     path('api/trades/create/', views.create_trade_offer, name='create_trade_offer'),
     path('api/trades/', views.trade_offers, name='trade_offers'),
     path('api/trades/<int:offer_id>/accept/', views.accept_trade, name='accept_trade'),
