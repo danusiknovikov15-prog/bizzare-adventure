@@ -1128,6 +1128,30 @@ def trade_inventory(request):
         ]
     })
 
+@login_required
+@csrf_exempt
+def quick_match(request):
+    """Join the first available public room or create one."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'})
+    try:
+        data = json.loads(request.body or '{}')
+        mode = data.get('mode', 'coop')
+        room = MultiplayerRoom.objects.filter(status='waiting', is_private=False, mode=mode).exclude(players__user=request.user).order_by('created_at').first()
+        if room and not room.is_full():
+            taken = set(room.players.values_list('player_slot', flat=True))
+            slot = next((i for i in range(room.max_players) if i not in taken), 0)
+            RoomPlayer.objects.create(room=room, user=request.user, player_slot=slot)
+            broadcast_room_state(room.code)
+            return JsonResponse({'success': True, 'room_code': room.code, 'created': False})
+        room = MultiplayerRoom.objects.create(host=request.user, mode=mode, level_number=1, is_private=False)
+        RoomPlayer.objects.create(room=room, user=request.user, player_slot=0, is_host=True, is_ready=True)
+        broadcast_room_state(room.code)
+        return JsonResponse({'success': True, 'room_code': room.code, 'created': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 # Trading API
 @login_required
 @csrf_exempt
