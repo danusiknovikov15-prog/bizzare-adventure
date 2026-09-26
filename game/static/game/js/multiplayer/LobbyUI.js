@@ -21,6 +21,7 @@ export class LobbyUI {
 
         // DOM elements (will be set after init)
         this.elements = {};
+        this.roomPollTimer = null;
     }
 
     /**
@@ -34,10 +35,12 @@ export class LobbyUI {
 
         this.socket.onopen = () => {
             console.log('[LobbyUI] Connected to lobby');
+            this.startRoomPolling();
         };
 
         this.socket.onclose = (event) => {
             console.log('[LobbyUI] Disconnected from lobby');
+            this.stopRoomPolling();
         };
 
         this.socket.onerror = (error) => {
@@ -50,6 +53,26 @@ export class LobbyUI {
         this.socket.onmessage = (event) => {
             this.handleMessage(JSON.parse(event.data));
         };
+    }
+
+    startRoomPolling() {
+        this.stopRoomPolling();
+        this.roomPollTimer = setInterval(async () => {
+            try {
+                const response = await fetch('/api/room/find/' + encodeURIComponent(this.roomCode) + '/');
+                const data = await response.json();
+                if (data.success && data.room) this.updateRoomState(data.room);
+            } catch (e) {
+                // WebSocket remains the primary transport; polling is only a fallback.
+            }
+        }, 2000);
+    }
+
+    stopRoomPolling() {
+        if (this.roomPollTimer) {
+            clearInterval(this.roomPollTimer);
+            this.roomPollTimer = null;
+        }
     }
 
     /**
@@ -284,6 +307,7 @@ export class LobbyUI {
      * Disconnect from lobby
      */
     disconnect() {
+        this.stopRoomPolling();
         if (this.socket) {
             this.socket.close();
             this.socket = null;
