@@ -91,6 +91,10 @@
             background: linear-gradient(135deg, #e95a5a, #9a3d3d);
         }
 
+        .mode-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+        .btn-mode { background:rgba(74,144,217,.22); color:white; border:1px solid rgba(74,144,217,.45); }
+        .btn-mode:hover { background:rgba(74,144,217,.38); }
+
         .input-group {
             display: flex;
             gap: 10px;
@@ -241,7 +245,7 @@
         .trade-status { min-height:22px; margin:8px 0; text-align:center; }
         .trade-offer { background:rgba(0,0,0,.3); border-radius:8px; padding:10px; margin-top:8px; }
         .trade-offer button { margin-left:6px; padding:6px 9px; border:0; border-radius:5px; cursor:pointer; }
-        @media (max-width:600px) { .trade-grid { grid-template-columns:1fr; gap:5px; } .multiplayer-container { padding:16px 10px; } .menu-section { padding:14px; margin-bottom:14px; } .title { font-size:2em; margin-bottom:24px; } .section-title { font-size:1.25em; margin-bottom:12px; } .btn { width:100%; margin:4px 0; padding:10px 14px; font-size:.95em; } .mode-buttons { flex-direction:column; gap:3px; } .input-group { flex-direction:column; gap:6px; } .input-group .btn { width:100%; } .tabs { gap:5px; overflow-x:auto; } .tab { padding:8px 12px; font-size:.9em; white-space:nowrap; } .room-item { padding:10px; } }
+        @media (max-width:600px) { .mode-grid { grid-template-columns:1fr; gap:4px; } .trade-grid { grid-template-columns:1fr; gap:5px; } .multiplayer-container { padding:16px 10px; } .menu-section { padding:14px; margin-bottom:14px; } .title { font-size:2em; margin-bottom:24px; } .section-title { font-size:1.25em; margin-bottom:12px; } .btn { width:100%; margin:4px 0; padding:10px 14px; font-size:.95em; } .mode-buttons { flex-direction:column; gap:3px; } .input-group { flex-direction:column; gap:6px; } .input-group .btn { width:100%; } .tabs { gap:5px; overflow-x:auto; } .tab { padding:8px 12px; font-size:.9em; white-space:nowrap; } .room-item { padding:10px; } }
 
     </style>
 </head>
@@ -254,13 +258,17 @@
         <!-- Create Room Section -->
         <div class="menu-section">
             <h2 class="section-title">Create Room</h2>
-            <div class="mode-buttons">
-                <button class="btn btn-coop" onclick="createRoom('coop')">
-                    Co-op Mode
-                </button>
-                <button class="btn btn-pvp" onclick="createRoom('pvp')">
-                    PvP Mode
-                </button>
+            <div class="mode-grid">
+                <button class="btn btn-coop" onclick="createRoom('coop')">🤝 Co-op</button>
+                <button class="btn btn-pvp" onclick="createRoom('pvp')">⚔️ PvP</button>
+                <button class="btn btn-mode" onclick="createRoom('survival')">🧟 Survival</button>
+                <button class="btn btn-mode" onclick="createRoom('bossrush')">👑 Boss Rush</button>
+                <button class="btn btn-mode" onclick="createRoom('race')">🏁 Race</button>
+                <button class="btn btn-mode" onclick="createRoom('kinghill')">🏔️ King of the Hill</button>
+                <button class="btn btn-mode" onclick="createRoom('capture')">🚩 Capture Point</button>
+                <button class="btn btn-mode" onclick="createRoom('escort')">🛡️ Escort</button>
+                <button class="btn btn-mode" onclick="createRoom('treasure')">💎 Treasure Hunt</button>
+                <button class="btn btn-mode" onclick="createRoom('infection')">🦠 Infection</button>
             </div>
         </div>
 
@@ -306,13 +314,17 @@
         <!-- Quick Match -->
         <div class="menu-section">
             <h2 class="section-title">Quick Match</h2>
-            <div class="mode-buttons">
-                <button class="btn btn-coop" onclick="quickMatch('coop')">
-                    Find Co-op Game
-                </button>
-                <button class="btn btn-pvp" onclick="quickMatch('pvp')">
-                    Find PvP Game
-                </button>
+            <div class="mode-grid quick-mode-grid">
+                <button class="btn btn-coop" onclick="quickMatch('coop')">🤝 Co-op</button>
+                <button class="btn btn-pvp" onclick="quickMatch('pvp')">⚔️ PvP</button>
+                <button class="btn btn-mode" onclick="quickMatch('survival')">🧟 Survival</button>
+                <button class="btn btn-mode" onclick="quickMatch('bossrush')">👑 Boss Rush</button>
+                <button class="btn btn-mode" onclick="quickMatch('race')">🏁 Race</button>
+                <button class="btn btn-mode" onclick="quickMatch('kinghill')">🏔️ King Hill</button>
+                <button class="btn btn-mode" onclick="quickMatch('capture')">🚩 Capture</button>
+                <button class="btn btn-mode" onclick="quickMatch('escort')">🛡️ Escort</button>
+                <button class="btn btn-mode" onclick="quickMatch('treasure')">💎 Treasure</button>
+                <button class="btn btn-mode" onclick="quickMatch('infection')">🦠 Infection</button>
             </div>
         </div>
 
