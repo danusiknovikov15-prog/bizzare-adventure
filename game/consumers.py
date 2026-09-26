@@ -430,13 +430,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
         elif message_type == 'level.complete':
-            is_host = await self.check_is_host()
-            if is_host:
+            if await self.check_is_host():
+                next_level, finished = await self.advance_room_level()
                 await self.channel_layer.group_send(
                     self.game_group_name,
-                    {
-                        'type': 'level_complete'
-                    }
+                    {'type': 'level_complete', 'next_level': next_level, 'finished': finished}
                 )
         elif message_type == 'game.over':
             is_host = await self.check_is_host()
@@ -448,6 +446,21 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'reason': data.get('reason', 'unknown')
                     }
                 )
+
+    @database_sync_to_async
+    def advance_room_level(self):
+        try:
+            room = MultiplayerRoom.objects.get(code=self.room_code)
+            if room.level_number >= 30:
+                room.status = 'finished'
+                room.save(update_fields=['status', 'updated_at'])
+                return room.level_number, True
+            room.level_number += 1
+            room.status = 'playing'
+            room.save(update_fields=['level_number', 'status', 'updated_at'])
+            return room.level_number, False
+        except MultiplayerRoom.DoesNotExist:
+            return 1, False
 
     @database_sync_to_async
     def verify_player(self):
@@ -551,9 +564,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
 
     async def level_complete(self, event):
-        await self.send(text_data=json.dumps({
-            'type': 'level.complete'
-        }))
+        await self.send(text_data=json.dumps({'type': 'level.complete', 'next_level': event.get('next_level'), 'finished': event.get('finished', False)}))
 
     async def game_over(self, event):
         await self.send(text_data=json.dumps({
