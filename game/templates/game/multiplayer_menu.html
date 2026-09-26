@@ -7,6 +7,35 @@
     <title>Multiplayer - Platformer Game</title>
     <link rel="stylesheet" href="{% static 'game/css/main.css' %}">
     <style>
+        /* Multiplayer pages must be a normal scrollable page on phones.
+           main.css is also used by the game canvas and disables body scrolling. */
+        html {
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            height: auto !important;
+            min-height: 100% !important;
+            touch-action: pan-y !important;
+        }
+
+        body {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            min-height: 100dvh !important;
+            position: static !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            touch-action: pan-y !important;
+        }
+
+        .multiplayer-container {
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding-bottom: 50px;
+        }
+    </style>
+
+    <style>
         body {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
