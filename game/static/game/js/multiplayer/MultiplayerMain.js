@@ -580,18 +580,18 @@ const earnedGauntlet = localStorage.getItem('bizarre_infinity_gauntlet_earned') 
         levelManager.cleanupCollectedTotems();
         levelManager.cleanupCollectedUnoCards();
 
-        if (config.isHost && !levelCompleteSent) {
+        if (!levelCompleteSent) {
             const aliveNow = levelManager.getEnemies().filter(e => e.isAlive).length;
             const atExit = levelManager.checkDoorEntry(player) || levelManager.checkGoalReached(player);
 
-            // Boss arenas finish immediately when the boss/enemies are defeated.
-            // Level 4 has no exit door, so requiring the player to reach an exit
-            // would make the level impossible to complete.
+            // Boss arenas can finish immediately after their enemies are defeated.
+            // Normal levels require the player to actually enter the portal.
             const BOSS_LEVELS = [4, 5, 10, 15, 20, 25, 30, 31];
             const isBossLevel = BOSS_LEVELS.includes(Number(config.level || 1));
 
             const needsGauntlet = Number(config.level || 1) === 31;
             const gauntletReady = !needsGauntlet || infinityGauntlet;
+
             if (aliveNow === 0 && (atExit || (isBossLevel && gauntletReady))) {
                 levelCompleteSent = true;
                 networkManager.sendLevelComplete();
