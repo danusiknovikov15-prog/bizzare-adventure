@@ -432,6 +432,16 @@ class GameConsumer(AsyncWebsocketConsumer):
                     'item_id': data.get('item_id')
                 }
             )
+        elif message_type == 'portal.enter':
+            # Any player may report entering the portal. The host client
+            # remains responsible for checking that the level is actually clear.
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    'type': 'portal_enter',
+                    'player_id': self.user.id
+                }
+            )
         elif message_type == 'level.complete':
             if await self.check_is_host():
                 next_level, finished = await self.advance_room_level()
@@ -567,6 +577,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             'type': 'item.pickup',
             'player_id': event['player_id'],
             'item_id': event['item_id']
+        }))
+
+    async def portal_enter(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'portal.enter',
+            'player_id': event.get('player_id')
         }))
 
     async def level_complete(self, event):
