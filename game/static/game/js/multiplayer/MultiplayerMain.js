@@ -187,7 +187,10 @@ export function initMultiplayerGame(config) {
     const BOSS_STONE_LEVELS = [5,10,15,20,25,30];
     const stoneKey = 'bizarre_stones_' + config.roomCode;
     let collectedStones = JSON.parse(localStorage.getItem(stoneKey) || '[]');
-    let infinityGauntlet = collectedStones.length >= 6 || localStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true' || localStorage.getItem('bizarre_infinity_gauntlet') === 'true';
+    // The Gauntlet is NOT available at the start of normal multiplayer.
+// It is earned at the Level 31 stand, or explicitly granted by the admin panel
+// for the current browser session.
+let infinityGauntlet = sessionStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true';
     let gauntletCooldown = 0;
     let gauntletButton = null;
 
