@@ -552,7 +552,7 @@ export function initMultiplayerGame(config) {
                     (player.x + player.width / 2) - (stand.x + stand.width / 2),
                     (player.y + player.height / 2) - (stand.y + stand.height / 2)
                 );
-                if (distance < 120) {
+                if (distance < 180) {
                     stand.collect();
                     infinityGauntlet = true;
                     localStorage.setItem('bizarre_infinity_gauntlet', 'true');
