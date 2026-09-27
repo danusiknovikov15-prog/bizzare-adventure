@@ -299,6 +299,10 @@ const earnedGauntlet = localStorage.getItem('bizarre_infinity_gauntlet_earned') 
 
     networkManager.onMultiplayerEvent = showMultiplayerEvent;
     networkManager.onGauntletUse = (targetId) => dustEnemy(targetId);
+    let remotePortalRequest = false;
+    networkManager.onPortalEnter = () => {
+        if (config.isHost) remotePortalRequest = true;
+    };
 
     // Load level
     const currentLevelIndex = Math.max(0, Math.min(levels.length - 1, Number(config.level || 1) - 1));
@@ -592,7 +596,13 @@ const earnedGauntlet = localStorage.getItem('bizarre_infinity_gauntlet_earned') 
             const needsGauntlet = Number(config.level || 1) === 31;
             const gauntletReady = !needsGauntlet || infinityGauntlet;
 
-            if (aliveNow === 0 && (atExit || (isBossLevel && gauntletReady))) {
+            // A non-host player entering the portal asks the host to complete it.
+            if (!config.isHost && aliveNow === 0 && atExit) {
+                networkManager.sendPortalEnter();
+            }
+
+            const portalRequested = atExit || remotePortalRequest;
+            if (aliveNow === 0 && (portalRequested || (isBossLevel && gauntletReady))) {
                 levelCompleteSent = true;
                 networkManager.sendLevelComplete();
             }
