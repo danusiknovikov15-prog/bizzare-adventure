@@ -190,7 +190,8 @@ export function initMultiplayerGame(config) {
     // The Gauntlet is NOT available at the start of normal multiplayer.
 // It is earned at the Level 31 stand, or explicitly granted by the admin panel
 // for the current browser session.
-let infinityGauntlet = sessionStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true';
+const earnedGauntlet = localStorage.getItem('bizarre_infinity_gauntlet_earned') === 'true';
+    let infinityGauntlet = earnedGauntlet || sessionStorage.getItem('bizarre_infinity_gauntlet_admin') === 'true';
     let gauntletCooldown = 0;
     let gauntletButton = null;
 
@@ -558,7 +559,7 @@ let infinityGauntlet = sessionStorage.getItem('bizarre_infinity_gauntlet_admin')
                 if (distance < 180) {
                     stand.collect();
                     infinityGauntlet = true;
-                    localStorage.setItem('bizarre_infinity_gauntlet', 'true');
+                    localStorage.setItem('bizarre_infinity_gauntlet_earned', 'true');
                     updateStoneHUD();
                     playGauntletCutscene();
                 }
