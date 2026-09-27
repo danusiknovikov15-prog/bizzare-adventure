@@ -12,6 +12,11 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         self.room_code = self.scope['url_route']['kwargs'].get('room_code')
         self.room_group_name = f'lobby_{self.room_code}'
         self.user = self.scope['user']
+        # Closing the lobby WebSocket is NOT the same as leaving the room.
+        # The game page navigates/reloads between levels, which can close this
+        # socket. Keep the RoomPlayer membership until the player explicitly
+        # leaves, otherwise a level transition can kick everyone from the room.
+        self.explicitly_left = False
 
         if not self.user.is_authenticated:
             await self.close()
@@ -38,8 +43,10 @@ class LobbyConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-        # Remove player from room if they disconnect
-        if hasattr(self, 'user') and self.user.is_authenticated:
+        # Do not remove RoomPlayer on ordinary WebSocket disconnects.
+        # Navigating from the lobby to the game/next level closes this socket,
+        # but the player is still part of the multiplayer room.
+        if self.explicitly_left and hasattr(self, 'user') and self.user.is_authenticated:
             await self.leave_room()
 
     async def receive(self, text_data):
@@ -56,6 +63,10 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         elif message_type == 'room.settings':
             settings = data.get('settings', {})
             await self.update_settings(settings)
+        elif message_type == 'room.leave':
+            # Explicit leave is the only normal way to remove the player.
+            self.explicitly_left = True
+            await self.leave_room()
         elif message_type == 'chat.message':
             message = data.get('message', '')
             await self.broadcast_chat(message)
