@@ -143,6 +143,13 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'game' / 'static']
 
+# Keep players logged in across new tabs and browser restarts.
+# Django stores the authenticated session in a persistent cookie instead of
+# making it a browser-session-only cookie.
+SESSION_COOKIE_AGE = 30 * 24 * 60 * 60  # 30 days
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
