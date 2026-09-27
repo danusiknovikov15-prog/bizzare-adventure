@@ -672,8 +672,7 @@
             try {
                 // Admin unlock is stored locally so the current browser can use
                 // the Gauntlet even before reaching Level 31.
-                localStorage.setItem('bizarre_infinity_gauntlet_admin', 'true');
-                localStorage.setItem('bizarre_infinity_gauntlet', 'true');
+                sessionStorage.setItem('bizarre_infinity_gauntlet_admin', 'true');
                 alert('⚡ Infinity Gauntlet unlocked! It will be available in the game.');
             } catch (error) {
                 console.error('Admin Gauntlet unlock error:', error);
