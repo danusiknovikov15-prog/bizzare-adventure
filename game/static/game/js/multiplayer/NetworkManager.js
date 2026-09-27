@@ -31,6 +31,7 @@ export class NetworkManager {
         this.onVoiceSignal = null;
         this.onMultiplayerEvent = null;
         this.onGauntletUse = null;
+        this.onPortalEnter = null;
 
         // State sync timing
         this.lastStateSend = 0;
@@ -119,6 +120,10 @@ export class NetworkManager {
 
             case 'gauntlet.use':
                 if (this.onGauntletUse) this.onGauntletUse(data.target_id);
+                break;
+
+            case 'portal.enter':
+                if (this.onPortalEnter) this.onPortalEnter(data.player_id);
                 break;
 
             case 'multiplayer.event':
@@ -288,6 +293,10 @@ export class NetworkManager {
     /**
      * Send level complete (host only)
      */
+    sendPortalEnter() {
+        this.send('portal.enter');
+    }
+
     sendLevelComplete() {
         if (!this.isHost) return;
         this.send('level.complete');
