@@ -48,7 +48,8 @@ function makeLevel(number) {
     backgroundColor,
     platforms,
     bounds:{minX:0,maxX:width,minY:0,maxY:600},
-    door:{x:width-100,y:470},
+    // Put the portal directly on the final platform so it is physically reachable.
+    door:{x:width-100,y:number === 31 ? 270 : 280},
     gauntletStand,
     goal:{x:width-190,y:420,width:170,height:100},
     enemies
