@@ -499,15 +499,28 @@ export class LevelManager {
     checkDoorEntry(player) {
         if (!this.door || !player.isAlive) return false;
 
-        // Check if player is near door
+        // Use rectangle overlap plus a generous center-distance fallback.
+        // This makes portal entry reliable on desktop and mobile.
         const playerBox = player.getBounds();
         const doorBox = this.door.getBounds();
 
-        const distance = Math.sqrt(
-            Math.pow(playerBox.x - doorBox.x, 2) +
-            Math.pow(playerBox.y - doorBox.y, 2)
+        const overlaps =
+            playerBox.x < doorBox.x + doorBox.width &&
+            playerBox.x + playerBox.width > doorBox.x &&
+            playerBox.y < doorBox.y + doorBox.height &&
+            playerBox.y + playerBox.height > doorBox.y;
+
+        if (overlaps) return true;
+
+        const playerCenterX = playerBox.x + playerBox.width / 2;
+        const playerCenterY = playerBox.y + playerBox.height / 2;
+        const doorCenterX = doorBox.x + doorBox.width / 2;
+        const doorCenterY = doorBox.y + doorBox.height / 2;
+        const distance = Math.hypot(
+            playerCenterX - doorCenterX,
+            playerCenterY - doorCenterY
         );
 
-        return distance < 150; // Within 150 pixels (increased range)
+        return distance < 120;
     }
 }
