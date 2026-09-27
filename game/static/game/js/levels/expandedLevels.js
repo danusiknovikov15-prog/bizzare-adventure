@@ -14,7 +14,17 @@ function makeLevel(number) {
   const [theme, backgroundColor, accent] = THEMES[(number - 31) % THEMES.length];
   const boss = number % 10 === 0 || number === 31;
   const width = 1800 + ((number * 137) % 900);
-  const platforms = [
+  // Level 31 gets a hand-built route so the Infinity Gauntlet is reachable.
+  // The other 299 levels keep the generated layout.
+  const platforms = number === 31 ? [
+    {x:0,y:550,width:420,height:50,color:accent},
+    {x:470,y:500,width:220,height:20,color:accent},
+    {x:740,y:450,width:220,height:20,color:accent},
+    {x:1010,y:400,width:220,height:20,color:accent},
+    {x:1280,y:450,width:220,height:20,color:accent},
+    {x:1550,y:400,width:220,height:20,color:accent},
+    {x:1820,y:350,width:500,height:30,color:accent}
+  ] : [
     {x:0,y:550,width:360,height:50,color:accent},
     {x:430,y:500,width:180,height:20,color:accent},
     {x:690,y:430,width:170,height:20,color:accent},
@@ -24,14 +34,14 @@ function makeLevel(number) {
     {x:Math.max(1680,width-260),y:360,width:240,height:30,color:accent}
   ];
   const enemies = [];
-  const gauntletStand = number === 31 ? {x: width - 120, y: 270} : null;
+  const gauntletStand = number === 31 ? {x: 2050, y: 260} : null;
   const count = 4 + (number % 5);
   for (let i=0;i<count;i++) {
     const x = 500 + ((number * 97 + i * 211) % Math.max(700,width-700));
     const y = 300 + ((i * 43 + number) % 170);
     enemies.push({x,y,isElite:(i % 3 === 0)});
   }
-  if (boss) enemies.push({x:width-220,y:270,isBoss:true,bossType:number===31?'basic':undefined});
+  if (boss) enemies.push({x:width-360,y:300,isBoss:true,bossType:number===31?'basic':undefined});
   return {
     name: 'Level ' + number + ': ' + theme,
     playerSpawn:{x:100,y:480},
