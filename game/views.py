@@ -89,14 +89,19 @@ def register_view(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            username = data.get('username')
-            password = data.get('password')
+            username = (data.get('username') or '').strip()
+            password = data.get('password') or ''
 
             if not username or not password:
                 return JsonResponse({'success': False, 'error': 'Username and password required'})
 
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({'success': False, 'error': 'Username already exists'})
+            if len(username) > 150:
+                return JsonResponse({'success': False, 'error': 'Username is too long'})
+
+            # Usernames are treated case-insensitively so "DanillaBOSS" and
+            # "danillaboss" cannot accidentally become confusing duplicates.
+            if User.objects.filter(username__iexact=username).exists():
+                return JsonResponse({'success': False, 'error': 'Username already exists. If this is your account, use Login instead.'})
 
             # Create user
             user = User.objects.create_user(username=username, password=password)
@@ -122,10 +127,20 @@ def login_view(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            username = data.get('username')
-            password = data.get('password')
+            username = (data.get('username') or '').strip()
+            password = data.get('password') or ''
 
-            user = authenticate(request, username=username, password=password)
+            if not username or not password:
+                return JsonResponse({'success': False, 'error': 'Enter your username and password'})
+
+            # Find the real stored username case-insensitively, then let Django
+            # verify the password normally. This fixes login failures caused by
+            # typing different capitalization than the account used at signup.
+            account = User.objects.filter(username__iexact=username).first()
+            if account is None:
+                return JsonResponse({'success': False, 'error': 'Username or password is incorrect'})
+
+            user = authenticate(request, username=account.username, password=password)
 
             if user is not None:
                 owner_profile = ensure_owner_account(user)
@@ -133,7 +148,7 @@ def login_view(request):
                 profile = owner_profile or UserProfile.objects.get(user=user)
                 return JsonResponse({
                     'success': True,
-                    'username': username,
+                    'username': account.username,
                     'current_level': profile.current_level,
                 })
             else:
