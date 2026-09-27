@@ -1,4 +1,3 @@
-# Use the official Python image
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -16,4 +15,4 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 10000
 
-CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && exec daphne -b 0.0.0.0 -p ${PORT:-10000} platformer_project.asgi:application"]
+CMD ["/bin/sh", "-c", "python manage.py migrate --noinput && python manage.py bootstrap_owner && exec daphne -b 0.0.0.0 -p ${PORT:-10000} platformer_project.asgi:application"]
