@@ -586,7 +586,9 @@ export function initMultiplayerGame(config) {
             const BOSS_LEVELS = [4, 5, 10, 15, 20, 25, 30, 31];
             const isBossLevel = BOSS_LEVELS.includes(Number(config.level || 1));
 
-            if (aliveNow === 0 && (atExit || isBossLevel)) {
+            const needsGauntlet = Number(config.level || 1) === 31;
+            const gauntletReady = !needsGauntlet || infinityGauntlet;
+            if (aliveNow === 0 && (atExit || (isBossLevel && gauntletReady))) {
                 levelCompleteSent = true;
                 networkManager.sendLevelComplete();
             }
